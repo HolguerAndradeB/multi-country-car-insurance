@@ -9,7 +9,7 @@
 | ADRs | [`ADR-001`](../../docs/adrs/ADR-001-multi-country-content-strategy.md), [`ADR-002`](../../docs/adrs/ADR-002-strapi-security-and-permissions.md), [`ADR-003`](../../docs/adrs/ADR-003-frontend-persistence-and-sdd-workflow.md) |
 | Review date | 2026-11-24 |
 | Reviewer | Big Pickle (`opencode/big-pickle`), independent `code-reviewer` |
-| Reviewer verdict | **APPROVED** (all `MINOR` follow-ups resolved in `90769eb`) |
+| Reviewer verdict | **APPROVED** (all `MINOR` follow-ups resolved in `34579e8`) |
 | Checkpoint 4 impact | **READY** — all four Gherkin acceptance criteria, all `US03-U01`–`U15` unit IDs, all `US03-E01`–`E16` E2E IDs, and all automated checks pass (**170/170** unit tests, **37/37** Playwright E2E tests). F-01 and F-02 are resolved. |
 
 ## Scope & Inputs Reviewed
@@ -264,11 +264,11 @@ No `CRITICAL` or `MAJOR` findings were recorded.
 
 ## Verification Re-check Section
 
-_Status: **APPROVED** — post-review fix commit `90769eb` verified across `npm run lint:api-guard`, `npm run build`, `npx ng build --configuration development`, Vitest (**15 files / 170 passed**), and Playwright E2E (**37 passed** against live Docker `:4200` + `:1337`)._
+_Status: **APPROVED** — post-review fix commit `34579e8` verified across `npm run lint:api-guard`, `npm run build`, `npx ng build --configuration development`, Vitest (**15 files / 170 passed**), and Playwright E2E (**37 passed** against live Docker `:4200` + `:1337`)._
 
 | Finding | Fix commit(s) | Re-check result | Notes |
 | --- | --- | --- | --- |
-| F-01 (`MINOR`) | `90769eb` | **RESOLVED** | Amended `specs/US-03-summary-and-payment.md` §1.2 and §5.6 to document the persisted-plan guard hydration required by `US03-E14`, and added 2 unit tests in `step2-complete.guard.spec.ts` covering valid/stale cold-reload hydration. |
-| F-02 (`MINOR`) | `90769eb` | **RESOLVED** | Hardened `US03-E16` in `frontend/e2e/us03-summary-payment.spec.ts` to assert 375px button heights/widths, terms scroll container `overflow-y: auto` / `max-height`, 375px 1-column / 768px 2-column grid + gaps, 1280px `gap`, and confirmation button target height. |
+| F-01 (`MINOR`) | `34579e8` | **RESOLVED** | Amended `specs/US-03-summary-and-payment.md` §1.2 and §5.6 to document the persisted-plan guard hydration required by `US03-E14`, and added 2 unit tests in `step2-complete.guard.spec.ts` covering valid/stale cold-reload hydration. |
+| F-02 (`MINOR`) | `34579e8` | **RESOLVED** | Hardened `US03-E16` in `frontend/e2e/us03-summary-payment.spec.ts` to assert 375px button heights/widths, terms scroll container `overflow-y: auto` / `max-height`, 375px 1-column / 768px 2-column grid + gaps, 1280px `gap`, and confirmation button target height. |
 | I-01 (`INFO`) | N/A | **ACCEPTED** | Checkpoint 3 Option A intentionally keeps create-only seed behavior. |
 | I-02 (`INFO`) | N/A | **ACCEPTED** | Manual Strapi-admin walkthrough remains a Checkpoint 4 human task. |
