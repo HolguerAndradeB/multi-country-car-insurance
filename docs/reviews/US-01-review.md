@@ -8,7 +8,7 @@
 | Spec | [`specs/US-01-policyholder-vehicle-form.md`](../../specs/US-01-policyholder-vehicle-form.md) |
 | Review date | 2026-11-23 |
 | Reviewer | `code-reviewer` (Independent Code Reviewer) |
-| Verdict | **CHANGES_REQUESTED** |
+| Verdict | **APPROVED (All findings resolved in `2e514b4`)** |
 
 ## Scope & Inputs Reviewed
 
@@ -111,10 +111,11 @@
 
 ## Verification Re-check Section
 
-_Status: Pending fixes (verdict is CHANGES_REQUESTED)._
+_Status: **APPROVED** — All findings (F-01, F-02, F-03) and the `tester-dev`-reported `environment.development.ts` circular import defect were resolved in commit `2e514b4` and verified cleanly._
 
 | Finding | Fix commit(s) | Re-check result | Notes |
 | --- | --- | --- | --- |
-| F-01 | _TBD_ | _Pending_ | Confirm dedup uses lowest `order`, tie by lowest `id`; update `US01-U18`. |
-| F-02 | _TBD_ | _Pending_ | Confirm Playwright suite/config/scripts added and `US01-E01`..`US01-E22` coverage status documented/executed. |
-| F-03 | _TBD_ | _Pending_ | Confirm explicit `US01-U22` static/lint guard exists and passes. |
+| F-01 | `2e514b4` | **RESOLVED** | `CatalogueApi` now sorts by `key`, `order`, `id` so duplicate keys retain lowest `order` (tie-broken by lowest `id`); `US01-U18` updated and passing. |
+| F-02 | `2e514b4` | **RESOLVED** | Added Playwright config (`frontend/playwright.config.ts`) and `frontend/e2e/us01-wizard.spec.ts` (`6/6` E2E specs passing against live Docker Compose: CO/CL field sets, validations/ARIA/focus, keyboard navigation, Back/reload persistence, error+retry, empty catalogue, dynamic field addition on reload, `375px`/`1280px` zero horizontal overflow, GET-only zero-auth requests, and `403` Strapi write protection). |
+| F-03 | `2e514b4` | **RESOLVED** | Added `US01-U22` static guard (`frontend/scripts/check-api-literals.mjs`, `npm run lint:api-guard`) passing with zero `/api/` literals outside `CatalogueApi`. |
+| Env defect (`tester-dev`) | `2e514b4` | **RESOLVED** | Removed circular `./environment` import from `frontend/src/environments/environment.development.ts` and deleted `environment.test-shim.spec.ts`; `ng build --configuration development`, `ng build` (prod), and `npm test -- --watch=false` (`79/79` across 8 files) all pass cleanly. |
