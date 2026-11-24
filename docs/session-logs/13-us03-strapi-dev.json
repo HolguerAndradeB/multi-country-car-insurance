@@ -1,0 +1,805 @@
+﻿{
+  "info": {
+    "id": "ses_df3c9e3f2ffeCLRvETsmRruuFH",
+    "projectID": "4838150bcae199eca107616b2ee1ce6c7f7585a1",
+    "agent": "strapi-dev",
+    "model": {
+      "id": "big-pickle",
+      "providerID": "opencode",
+      "variant": "default"
+    },
+    "cost": 0,
+    "tokens": {
+      "input": 39091,
+      "output": 3418,
+      "reasoning": 3755,
+      "cache": {
+        "read": 230656,
+        "write": 0
+      }
+    },
+    "outcome": "succeeded",
+    "time": {
+      "created": 1795501202532,
+      "updated": 1795501264770,
+      "busy": 1795501202556,
+      "idle": 1795501264775
+    },
+    "title": "US-03: Update CO and CL simulated terms seed copy",
+    "location": {
+      "directory": "C:\\Users\\MIPC\\.gemini\\antigravity\\scratch\\multi-country-car-insurance"
+    }
+  },
+  "messages": [
+    {
+      "id": "msg_20c361c73001bFReUYsvlMIk80",
+      "time": {
+        "created": 1795501202566
+      },
+      "text": "You are strapi-dev for the multi-country-car-insurance project.\nCRITICAL RULES:\n- Do NOT use Web Search or Web Fetch.\n- Edit ONLY `backend/src/bootstrap/seed-data.ts`. Do NOT modify schemas, `seed.ts`, `public-permissions.ts`, `frontend/`, `specs/`, or `docs/`.\n- Keep strict create-only idempotency in `seed.ts` (Checkpoint 3 Q1 Option A approved â€” NO migration or overwrite logic).\n- Do NOT run `npm run build` on the Windows host (host `node_modules` lacks Linux `better-sqlite3`); Strapi compilation and seeding will be verified via Docker Compose afterwards.\n\nFirst read:\n1. `AGENTS.md`\n2. `specs/US-03-summary-and-payment.md` (especially Â§1.3, Â§3.1â€“Â§3.4, Â§7.4 Checkpoint 3 Resolution)\n3. `backend/src/bootstrap/seed-data.ts` lines 1â€“125\n\nTask:\n- Update `TERMS_AND_CONDITIONS_CO` and `TERMS_AND_CONDITIONS_CL` in `backend/src/bootstrap/seed-data.ts` so they match `specs/US-03-summary-and-payment.md` Â§3.2 verbatim (country-distinct simulated Spanish text mentioning Colombia/`COP` vs Chile/`CLP`, clearly indicating simulation and no real policy/payment, zero English words).\n- Keep `documentMaskVisibleEnd: 4` and all other `countryConfigSeeds` fields, `formFieldSeeds`, and `insurancePlanSeeds` completely intact.\n- Remove the obsolete comment on `TERMS_AND_CONDITIONS_CO` saying \"US-03 readiness placeholder only\" and replace it with an accurate concise JSDoc comment referencing `specs/US-03-summary-and-payment.md` Â§3.2.\n- Verify with TypeScript typecheck only if safe (`npx tsc --noEmit` inside `backend/`) or inspect `git diff backend/src/bootstrap/seed-data.ts` carefully.\n\r\n",
+      "files": [],
+      "type": "user"
+    },
+    {
+      "id": "msg_20c361c8d001DMuAfG0ldspaQw",
+      "time": {
+        "created": 1795501202578,
+        "firstToken": 1795501204797,
+        "streamed": 1795501204970,
+        "completed": 1795501205034
+      },
+      "type": "assistant",
+      "agent": "strapi-dev",
+      "model": {
+        "id": "big-pickle",
+        "providerID": "opencode",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "I'll start by loading the required Strapi skill and reading all the specified inputs before making any changes."
+        },
+        {
+          "type": "tool",
+          "id": "chatcmpl-tool-9f532422c3c63916",
+          "name": "skill",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "id": "strapi-multi-country"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "<skill_content name=\"strapi-multi-country\">\n# Skill: strapi-multi-country\n\n# Strapi 5+ Multi-Country Conventions\n\nUse this skill for every Strapi 5+ schema, bootstrap seed, permission configuration, and API integration task in this repository.\n\n## 1. Strapi 5 API & Document Service Rules\n\n1. **Flattened REST Responses:** Strapi 5 returns flattened records without `.attributes`:\n   ```json\n   {\n     \"data\": [\n       {\n         \"id\": 1,\n         \"documentId\": \"abc123xyz\",\n         \"key\": \"licensePlate\",\n         \"label\": \"Placa del vehículo\",\n         \"country\": \"CO\"\n       }\n     ],\n     \"meta\": { \"pagination\": { \"page\": 1, \"pageSize\": 25, \"total\": 1 } }\n   }\n   ```\n   Never write frontend adapters expecting Strapi v4 `{ id, attributes: { ... } }`.\n2. **Document Service API (`strapi.documents`):** In Strapi 5 lifecycle/bootstrap code, use `strapi.documents('api::model.model')` instead of deprecated `strapi.entityService`.\n   - Always pass `status: 'published'` when creating seed entries so public GET queries return them immediately (`draftAndPublish: true` lets business editors stage drafts without publishing).\n\n## 2. Multi-Country Content Architecture (`CO` & `CL`)\n\nAll business-configurable items are scoped by a `country` enumeration (`CO`, `CL`):\n\n1. **Form Fields (`form-field` collection type)**\n   - Required attributes:\n     - `key` (`string`, required): stable technical field identifier (e.g., `documentType`, `documentNumber`, `birthDate`, `licensePlate`, `vehicleMake`, `vehicleYear`, `city`, `acceptMarketing`)\n     - `label` (`string`, required): localized user-facing label\n     - `type` (`enumeration`: `text | number | select | date | checkbox`, required)\n     - `required` (`boolean`, default `false`)\n     - `validations` (`json`, optional): typed validation metadata (e.g., `{ \"minLength\": 5, \"maxLength\": 12, \"pattern\": \"^[A-Z]{3}[0-9]{3}$\", \"rule\": \"vehicleYear\" }`)\n     - `options` (`json`, optional): array of `{ \"value\": \"...\", \"label\": \"...\" }` for `select` fields\n     - `helpText` (`string`, optional)\n     - `errorMessage` (`string`, optional): business-configured validation error message\n     - `order` (`integer`, required)\n     - `country` (`enumeration`: `CO | CL`, required)\n     - `section` (`enumeration`: `policyholder | vehicle`, optional/recommended for grouping)\n\n2. **Insurance Plans (`insurance-plan` collection type)**\n   - Required attributes:\n     - `name` (`string`, required)\n     - `shortDescription` (`text`, required)\n     - `basePrice` (`decimal` or `biginteger`, required)\n     - `currency` (`enumeration`: `COP | CLP`, required)\n     - `coverages` (`json`, required): list of coverage objects/labels\n     - `benefits` (`json`, required): list of benefit strings\n     - `order` (`integer`, required)\n     - `recommended` (`boolean`, default `false`)\n     - `active` (`boolean`, default `true`)\n     - `country` (`enumeration`: `CO | CL`, required)\n\n3. **Country Configuration / Legal (`country-config` collection type)**\n   - Required attributes:\n     - `country` (`enumeration`: `CO | CL`, unique, required)\n     - `countryName` (`string`, required)\n     - `currency` (`enumeration`: `COP | CLP`, required)\n     - `localeCode` (`string`, required: `es-CO` / `es-CL`; avoid `locale` as it is reserved in Strapi 5)\n     - `termsAndConditions` (`richtext` or `text`, required)\n     - `documentMaskVisibleEnd` (`integer`, default `4`)\n\n## 3. Idempotent Bootstrap Seed Pattern\n\nIn `backend/src/index.ts` inside `async bootstrap({ strapi })`:\n1. Check if entries already exist for each content type + country + unique key before inserting:\n   ```ts\n   const existing = await strapi.documents('api::form-field.form-field').findMany({\n     filters: { country: item.country, key: item.key },\n     status: 'published',\n   });\n   if (existing.length === 0) {\n     await strapi.documents('api::form-field.form-field').create({\n       data: item,\n       status: 'published',\n     });\n   }\n   ```\n2. Running `docker compose up` multiple times must NEVER fail or create duplicate fields/plans/configs.\n3. All seeded data must be 100% fictitious (no real personal data).\n\n## 4. Minimal Public Role Security Pattern\n\nConfigure the `Public` users-permissions role programmatically in `bootstrap`:\n1. Query `plugin::users-permissions.role` where `type = 'public'`.\n2. Grant **ONLY** `find` and `findOne` actions for:\n   - `api::form-field.form-field`\n   - `api::insurance-plan.insurance-plan`\n   - `api::country-config.country-config`\n3. Explicitly ensure `create`, `update`, and `delete` actions are **NOT** enabled for `Public`.\n4. Never create or pass any full-access or write API token to the Angular front end.\n\n## 5. Verification Checklist\n\nAfter starting Strapi, verify with `curl`:\n- `GET /api/form-fields?filters[country][$eq]=CO&sort=order:asc` returns HTTP `200` with flattened `data[]`.\n- `GET /api/insurance-plans?filters[country][$eq]=CL&filters[active][$eq]=true&sort=order:asc` returns HTTP `200`.\n- `POST /api/form-fields` without auth returns HTTP `403` (or `401`), confirming write protection.\n\nBase directory for this skill: C:\\Users\\MIPC\\.gemini\\antigravity\\scratch\\multi-country-car-insurance\\.opencode\\skills\\strapi-multi-country\nRelative paths in this skill (e.g., scripts/, reference/) are relative to this base directory.\nNote: file list is sampled.\n\n<skill_files>\n</skill_files>\n</skill_content>"
+              }
+            ],
+            "metadata": {
+              "name": "strapi-multi-country",
+              "directory": "C:\\Users\\MIPC\\.gemini\\antigravity\\scratch\\multi-country-car-insurance\\.opencode\\skills\\strapi-multi-country",
+              "truncated": false
+            }
+          },
+          "time": {
+            "created": 1795501204964,
+            "ran": 1795501204967,
+            "completed": 1795501204977
+          }
+        }
+      ],
+      "snapshot": {
+        "start": "72c6161c46157529f6253b0f4fe8c56f05713087",
+        "end": "72c6161c46157529f6253b0f4fe8c56f05713087",
+        "files": []
+      },
+      "finish": "tool-calls",
+      "rawFinish": "tool_calls",
+      "cost": 0,
+      "tokens": {
+        "input": 6634,
+        "output": 38,
+        "reasoning": 0,
+        "cache": {
+          "read": 2816,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_20c362634001PimGjVszu2uqFJ",
+      "time": {
+        "created": 1795501205048,
+        "firstToken": 1795501207278,
+        "streamed": 1795501207546,
+        "completed": 1795501207619
+      },
+      "type": "assistant",
+      "agent": "strapi-dev",
+      "model": {
+        "id": "big-pickle",
+        "providerID": "opencode",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "I've loaded the skill. Now let me read the required inputs in parallel."
+        },
+        {
+          "type": "tool",
+          "id": "chatcmpl-tool-946b11ddd57dbf50",
+          "name": "read",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "path": "AGENTS.md"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Read file AGENTS.md, lines 1-122\n1: # Global Agent Context — Multi-Country Car Insurance Wizard\n2: \n3: This file governs all AI agents, subagents, and automated skills operating in this repository. Every artifact produced must comply with these conventions.\n4: \n5: ---\n6: \n7: ## 1. Project Mission\n8: \n9: Build a **single-build, multi-country car insurance quoting wizard** serving **Colombia (`CO`)** and **Chile (`CL`)** with:\n10: - **Front end:** Angular 21+ (single application and single build for both countries).\n11: - **Content backend:** Strapi 5+ (100% business-configurable form fields, plans, coverages, benefits, and legal terms per country without requiring a front-end redeployment).\n12: - **Environment:** Single-command local startup (`docker compose up`) with idempotent seed data for both Colombia and Chile.\n13: \n14: ---\n15: \n16: ## 2. Methodology: Lightweight Custom SDD (No External Framework)\n17: \n18: We follow a custom **Spec-Driven Development (SDD)** workflow without external SDD frameworks (such as Spec Kit or Kiro) so that every artifact remains transparent, concise, and strictly aligned with traceability requirements.\n19: \n20: ### Mandatory Traceability Chain\n21: Every increment must follow and link this chain:\n22: \n23: `User Story (docs/user-stories/US-XX.md)` → `Spec (specs/US-XX-*.md)` → `ADR (docs/adrs/ADR-XXX-*.md)` → `Code (backend/ & frontend/)` → `Tests (unit + E2E)` → `Code Review (docs/reviews/US-XX-review.md)` → `Fix commits`\n24: \n25: ---\n26: \n27: ## 3. Hybrid Tooling Model\n28: \n29: - **Antigravity:** Planning, multi-step orchestration, human-in-the-loop checkpoints, and interactive/visual browser verification (accessibility, keyboard-only navigation, mobile/desktop responsiveness).\n30: - **OpenCode (`opencode` CLI):** Versioned subagent definitions (`.opencode/agents/`), reusable custom skills (`.opencode/skills/`), focused agent execution, and unedited session log exports (`opencode session export` stored in `docs/session-logs/`).\n31: \n32: ### Subagent Roster & Ownership Boundaries\n33: \n34: | Subagent | Role | Allowed Scope | Outputs |\n35: | --- | --- | --- | --- |\n36: | `spec-analyst` | Spec & ADR Analyst | `specs/`, `docs/adrs/` (no bash) | `specs/US-XX-*.md`, `docs/adrs/ADR-XXX-*.md` |\n37: | `strapi-dev` | Strapi Backend Developer | `backend/`, Strapi Docker/env config | Content schemas, idempotent seed, Public role read-only permissions |\n38: | `angular-dev` | Angular Front-End Developer | `frontend/` production source (no test suites) | Standalone components, signal stores, typed dynamic forms |\n39: | `tester-dev` | Test Automation Developer | `frontend/src/**/*.spec.ts`, `frontend/e2e/**`, test configs | Unit tests, Playwright E2E tests, execution reports |\n40: | `code-reviewer` | Independent Code Reviewer | `docs/reviews/` (read-only on app code) | `docs/reviews/US-XX-review.md` with severity-ranked findings |\n41: \n42: ---\n43: \n44: ## 4. Mandatory Technical Rules\n45: \n46: ### 4.1 Angular 21+ (`frontend/`)\n47: - **Standalone components only** — NO `NgModule`s anywhere.\n48: - **Signals-first reactivity** — `signal()`, `computed()`, `input()`, `output()`, and `effect()` (only when strictly needed).\n49: - **Built-in control flow** — `@if`, `@for` (with explicit `track`), `@switch`; never use legacy `*ngIf`, `*ngFor`, `*ngSwitch`.\n50: - **`ChangeDetectionStrategy.OnPush`** on all components.\n51: - **`inject()` function** for dependency injection instead of constructor parameter injection.\n52: - **Strict TypeScript** — zero `any`, explicit interfaces/types for Strapi payloads, dynamic form schemas, and wizard state.\n53: - **State persistence** — persist wizard state strictly on the front end (`sessionStorage` or `localStorage`, scoped by country). No backend database for user quote submissions.\n54: - **Simulated pricing & payment** — pricing adjustments and payment submission are simulated on the front end; never integrate real payment gateways or accept real card data.\n55: \n56: ### 4.2 Strapi 5+ (`backend/`)\n57: - **Strapi 5 flattened REST format** — consume `data: [{ id, documentId, ...fields }]` directly (never Strapi v4 `.attributes` nesting).\n58: - **Zero-redeploy configurability** — adding, removing, reordering, or modifying published form fields, select options, plans, or legal terms in Strapi must reflect immediately on reload in Angular without code changes.\n59: - **Idempotent bootstrap seed** — `backend/src/index.ts` must populate realistic fictitious seed data for both `CO` and `CL` if missing, published (`status: 'published'`), without duplicating records across restarts.\n60: \n61: ### 4.3 Security (Non-Negotiable)\n62: - **NEVER expose any Strapi write token, admin token, or API token with write permissions to the browser.**\n63: - **Minimal Public Role permissions** — configure Strapi's `Public` role programmatically with ONLY `find` and `findOne` on strictly required read-only content types. Zero `create`, `update`, or `delete` permissions on `Public`.\n64: - **NEVER commit real secrets, passwords, API keys, or real personal data** — use `.env` (gitignored) + `.env.example` with placeholders, and strictly fictitious user/vehicle data.\n65: \n66: ### 4.4 Accessibility, Localization & UX\n67: - **Keyboard-only completion** — the entire wizard (country selection, Step 1, Step 2, Step 3, confirmation/retry) must be operable via keyboard alone (`Tab`, `Shift+Tab`, `Enter`, `Space`, `Arrow` keys).\n68: - **Accessible semantics** — every form control must have an explicit `<label for>`, `aria-invalid`, `aria-describedby` linking help text and validation errors, and visible `:focus-visible` outlines.\n69: - **Responsive layout** — works cleanly on mobile (`375px`) and desktop (`1280px+`).\n70: - **Explicit UI states** — every async view must handle `loading`, `empty`, and `error` states gracefully with retry options.\n71: \n72: ---\n73: \n74: ## 5. Language Policy\n75: \n76: - **English:** All source code, identifiers, filenames, comments, `README.md`, `FLOW.md`, specs, ADRs, code review reports, and Git commit messages.\n77: - **Localized Spanish (`es-CO` / `es-CL`):** All Strapi seed content and user-facing copy in the Angular app, adapted to each country's terminology (e.g., *cédula de ciudadanía / placa* in Colombia; *RUT / patente* in Chile) and currency formatting (`COP` / `CLP`).\n78: \n79: ---\n80: \n81: ## 6. Repository Structure\n82: \n83: ```text\n84: .\n85: ├── AGENTS.md                     # Global conventions for all agents\n86: ├── FLOW.md                       # Agentic workflow documentation & Mermaid diagram\n87: ├── README.md                     # Setup, architecture overview & requirements checklist\n88: ├── docker-compose.yml            # Single-command startup (Strapi + Angular)\n89: ├── .opencode/\n90: │   ├── agents/                   # Versioned subagent definitions\n91: │   └── skills/                   # Versioned reusable domain skills\n92: ├── docs/\n93: │   ├── user-stories/             # Input functional stories (US-01, US-02, US-03)\n94: │   ├── adrs/                     # Architecture Decision Records (MADR format)\n95: │   ├── reviews/                  # Code review findings and resolution logs\n96: │   └── session-logs/             # Unedited agent session exports\n97: ├── specs/                        # SDD specifications per user story\n98: ├── backend/                      # Strapi 5+ project & seed logic\n99: └── frontend/                     # Angular 21+ application & tests (unit + E2E)\n100: ```\n101: \n102: ---\n103: \n104: ## 7. Commit & Traceability Conventions\n105: \n106: Use Conventional Commits referencing the relevant story, ADR, or review:\n107: - `chore: ...` — repository, tooling, or environment setup\n108: - `docs(adr): ADR-XXX ...` — architecture decision records\n109: - `docs(spec): US-XX ...` — functional specifications\n110: - `feat(US-XX): ...` — implementation and tests for a user story\n111: - `fix(review-US-XX): ...` — fixes addressing code review findings\n112: - `docs(flow): ...` — `FLOW.md`, `README.md`, and session logs\n113: \n114: ---\n115: \n116: ## 8. Human-in-the-Loop Checkpoints\n117: \n118: No phase advances without explicit human approval at these checkpoints:\n119: 1. **Checkpoint 1 — Workflow & Rules:** Approve `AGENTS.md`, subagents, and custom skills before writing ADRs or application code.\n120: 2. **Checkpoint 2 — Architecture (ADRs):** Review and approve `ADR-001` (multi-country strategy), `ADR-002` (Strapi security & permissions), and `ADR-003` (front-end persistence & SDD tooling).\n121: 3. **Checkpoint 3 — Specs (`US-01`, `US-02`, `US-03`):** Review each spec, answer open questions / resolve gaps, and approve before implementation begins.\n122: 4. **Checkpoint 4 — Code Review & Verification:** Review `docs/reviews/US-XX-review.md`, verify fixes, and confirm UI/keyboard/E2E checks before marking the increment QA-ready."
+              }
+            ],
+            "metadata": {
+              "truncated": false
+            }
+          },
+          "time": {
+            "created": 1795501207371,
+            "ran": 1795501207536,
+            "completed": 1795501207553
+          }
+        },
+        {
+          "type": "tool",
+          "id": "chatcmpl-tool-a419b73287dcc5a0",
+          "name": "read",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "path": "specs/US-03-summary-and-payment.md"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Read file specs/US-03-summary-and-payment.md, lines 1-611\n1: # Spec US-03 — Summary and Simulated Payment (Colombia `CO` / Chile `CL`)\n2: \n3: **Story ID:** `US-03`\n4: \n5: **Status:** Approved — Checkpoint 3 (2026-11-24)\n6: \n7: **Date:** 2026-11-24\n8: \n9: **Author:** `spec-analyst`\n10: \n11: ---\n12: \n13: ## 1. Traceability & Status\n14: \n15: ### 1.1 Traceability header\n16: \n17: | Item | Value |\n18: | --- | --- |\n19: | User story | [`docs/user-stories/US-03.md`](../docs/user-stories/US-03.md) |\n20: | Spec (this document) | `specs/US-03-summary-and-payment.md` |\n21: | Accepted ADRs | [`ADR-001` — Multi-country content strategy](../docs/adrs/ADR-001-multi-country-content-strategy.md) (Accepted, Checkpoint 2) · [`ADR-002` — Strapi security & permissions](../docs/adrs/ADR-002-strapi-security-and-permissions.md) (Accepted, Checkpoint 2) · [`ADR-003` — Front-end persistence & SDD workflow](../docs/adrs/ADR-003-frontend-persistence-and-sdd-workflow.md) (Accepted, Checkpoint 2) |\n22: | Predecessor specs (contract sources) | [`specs/US-01-policyholder-vehicle-form.md`](./US-01-policyholder-vehicle-form.md) (Approved, Checkpoint 3) · [`specs/US-02-plan-list.md`](./US-02-plan-list.md) (Approved, Checkpoint 3) |\n23: | Governing skills | [`.opencode/skills/strapi-multi-country/SKILL.md`](../.opencode/skills/strapi-multi-country/SKILL.md) §1–§5 · [`.opencode/skills/angular-dynamic-wizard/SKILL.md`](../.opencode/skills/angular-dynamic-wizard/SKILL.md) §1–§5 |\n24: | Global conventions | [`AGENTS.md`](../AGENTS.md) §1, §2, §4.1, §4.2, §4.3, §4.4, §5, §8 |\n25: | Implemented by | `angular-dev` (`frontend/`), `strapi-dev` (`backend/` — **seed copy only**, see §3) |\n26: | Verified by | `tester-dev` (unit + Playwright E2E), `code-reviewer` (`docs/reviews/US-03-review.md`), human Checkpoint 4 |\n27: | Status | **Approved — Checkpoint 3 (2026-11-24)** |\n28: \n29: **No new ADR is introduced by this increment.** `ADR-001` §4.1 already declares `country-config.termsAndConditions` and `country-config.documentMaskVisibleEnd`; `ADR-002` §4.1 already grants Public `find`/`findOne` on `country-config` (exercised once in US-01 and now again, live, in US-03); `ADR-003` §4.2 already fixes the persisted shape and §4.4 already governs back-edit continuity. US-03 activates those decisions and makes them testable — it does **not** amend them. No new Strapi collection type, no new Public permission, and no new `/api/` URL is introduced. Every derivation that would change an ADR is instead listed as a Checkpoint 3 open question in §7.4.\n30: \n31: ### 1.2 US-01 / US-02 handoff contracts (must be preserved verbatim in shape)\n32: \n33: US-03 consumes — and must not redefine — these existing artifacts:\n34: \n35: | Artifact | Contract used by US-03 |\n36: | --- | --- |\n37: | `CatalogueApi.getCountryConfig(country)` | Existing method (`catalogue.api.ts`): builds `${apiBaseUrl}/api/country-configs?filters[country][$eq]=${country}`, maps the flattened Strapi 5 response through `mapCountryConfig()`, returns `Observable<CountryConfig \\| null>`. US-03 calls it **live on every Step 3 entry** (§4.2, G9) — no new API method, no caching layer. |\n38: | `CountryConfig` | Existing domain model (`wizard.models.ts`): `id`, `documentId`, `country`, `countryName`, `currency`, `localeCode`, `termsAndConditions: string`, `documentMaskVisibleEnd: number`. US-03 adds **no field** to it. |\n39: | `WizardStore` | Existing root signal store. US-03 **extends this same store** with Step 3 signals/methods (§5.3) — no second store, no RxJS side channel. Existing `reset(country)` already calls `persistence.clear(country)` and clears all signals; it is reused verbatim for \"Nueva cotización\". |\n40: | `PersistedWizardStateV1` | `schemaVersion: 1` with `step1` and `selectedPlanDocumentId` only. US-03 **does not add payment fields and does not bump the schema version** (§5.3, §7.4 Q3). \"Editar datos\" and \"Cambiar plan\" preserve both values; only \"Nueva cotización\" clears them. |\n41: | `QuotedPlan` | US-02's derived card view model carries `basePrice`, `finalPrice`, `formattedBasePrice`, `formattedFinalPrice`, `adjustment`. US-03 **reads** these for \"Plan elegido\"; it never recomputes the simulated price (G4). |\n42: | `step1Values()` / `fields()` | The freshly fetched Strapi field catalogue supplies every summary label (`form-field.label`) and every select display value (`option.label`); `step1Values()` supplies the values. US-03 does not add or rename Step 1 keys. |\n43: | `QuoteClock` | Injected clock boundary from US-02 (`today`, `currentYear`, local calendar date, no UTC conversion). US-03 reuses it for the `YYYYMMDD` part of the quote number (§5.4). |\n44: | `formatCurrency`, `pickKeys`, `calculateAdjustedPrice` | Existing pure helpers. US-03 reuses `formatCurrency` for the three price lines and never calls `calculateAdjustedPrice` itself (G4). |\n45: | `CountryContextService` | `country`, `locale`, `currency` signals and `quotePath(step: 'quote' \\| 'plans' \\| 'summary')` are the only source of route context and navigation paths. |\n46: | `step2CompleteGuard` | Already protects `/:country/quote/summary`. US-03 keeps it unchanged: invalid Step 1 → `/:country/quote`; Step 1 valid but no active selection → `/:country/quote/plans`. |\n47: | `UI_COPY` | Shared neutral-Spanish chrome copy. US-03 **adds keys** for Step 3 (§5.6) but keeps all existing keys byte-identical. Country-specific terms text comes from Strapi, never from `UI_COPY`. |\n48: | `SummaryPlaceholderPageComponent` | US-02's read-only Step 3 shell. US-03 **replaces it wholesale** with `QuoteStep3SummaryPageComponent`, exactly as US-02 replaced `PlansPlaceholderPageComponent`. |\n49: \n50: ### 1.3 Scope of this increment\n51: \n52: In scope (US-03 only):\n53: \n54: - Upgrade the two `country-config` seed **terms strings** to country-distinct, clearly simulated Spanish copy (no schema change); keep `documentMaskVisibleEnd` at `4` for both countries.\n55: - Live Step 3 load/refresh of `countryConfig` through the existing `getCountryConfig(country)`.\n56: - Read-only summary sections \"Tomador\", \"Vehículo\", \"Plan elegido\" with labels/options from Strapi and the three price lines from the US-02 `QuotedPlan`.\n57: - Pure `maskDocumentNumber()` display masking with raw value untouched in store/storage.\n58: - Terms acceptance gating, a frontend-only injectable `SimulatedPaymentService`, a strict synchronous double-submit lock, deterministic quote numbers, a frozen confirmation snapshot, rejection recovery, and \"Nueva cotización\".\n59: - Explicit `loading` / `error` / `empty-terms` / `ready` / `processing` / `rejected` / `confirmed` states, accessibility, keyboard-only completion and responsive layout.\n60: \n61: Out of scope (owned by later stories or permanently forbidden, listed only as boundaries):\n62: \n63: | Concern | Owner | US-03 boundary |\n64: | --- | --- | --- |\n65: | Real payment gateway, real card data, backend quote persistence | Never (`AGENTS.md` §4.1, §4.3) | No card fields, no CVV, no billing address, no `POST`/`PUT`/`DELETE`, no payment token. The only simulated-failure control is a deterministic test hook (§7.4 Q2). |\n66: | Editing field definitions, validations, plans or prices | US-01 / US-02 | US-03 reads them; it does not change Step 1 or Step 2 rendering. |\n67: | New Strapi content types or Public permissions | Never for US-03 | `country-config` already exposes both fields through the existing six read-only Public actions (§3.3, §4.4). |\n68: | Legal approval of the terms text | Human (Checkpoint 3 / business) | Seed copy is explicitly simulated demo copy; real legal text is entered in Strapi by the business team. Flagged in §7.4 Q1. |\n69: \n70: ---\n71: \n72: ## 2. Gap & Ambiguity Analysis\n73: \n74: The user story is business-level. Each row below is a **gap, edge case, or implicit assumption** in `US-03` and the concrete decision this spec imposes. Every decision is traceable to `AGENTS.md`, an accepted ADR, a skill, the US-01/US-02 contracts, or is flagged in §7.4 for Checkpoint 3.\n75: \n76: ### 2.1 Summary content and display rules\n77: \n78: | # | Gap / edge case | Decision in this spec |\n79: | --- | --- | --- |\n80: | G1 | **\"Shows the policyholder's data, the vehicle's data and the chosen plan\" never defines which fields or where their labels come from.** | Three read-only sections with exact headings **\"Tomador\"**, **\"Vehículo\"**, **\"Plan elegido\"**. Rows are derived from the freshly fetched `fields()`: one row per field whose `section` is `policyholder` or `vehicle`, in `order` ascending (`id` ascending tie-break, same rule as US-01/US-02). The row label is **`form-field.label` verbatim** — never a hardcoded English or translated string. Rows live in a `<dl>` with `<dt>`/`dd>`. Section headings are shared neutral Spanish in `UI_COPY` (§5.6). |\n81: | G2 | **Select fields store the raw `option.value`, not what a human should read.** | For `type === 'select'`, resolve the displayed value through that field's `options`: `options.find(o => o.value === raw)?.label ?? raw`. A value no longer present in Strapi (business removed the option) renders the **raw value** unchanged with a dev-console warning — it never renders blank and never throws. No re-validation and no redirect; this is a display-only fallback. |\n82: | G3 | **Checkbox fields and optional blanks are undefined.** | Booleans render exactly **`\"Sí\"`** for `true` and **`\"No\"`** for `false` (shared `UI_COPY`, not Strapi). A blank value (`null`, `''`, or an absent key) on a field with `required: false` causes the **entire row to be omitted**. A blank value on a `required: true` field (which `step2CompleteGuard` should already prevent) renders the safe placeholder **`\"—\"`** instead of crashing the page. Numbers render as their decimal string; ISO dates render through `formatIsoDate()` (§5.4). |\n83: | G4 | **\"Chosen plan with its final price\" could tempt a recomputation that disagrees with Step 2.** | The three price lines are read **only** from the already-derived `QuotedPlan` for the selected `documentId`: `formattedBasePrice`, the adjustment text built from `adjustment.adjustmentPercent`/`adjustment.reasons`, and `formattedFinalPrice`. US-03 never calls `calculateAdjustedPrice`, never re-reads `vehicleYear`/`birthDate` for pricing, and never invents a fourth price. If the selected plan cannot be resolved (`selectedPlan() === null`), `step2CompleteGuard` has already redirected — the component does not render a partial summary. |\n84: | G5 | **Price transparency inherited from US-02 must survive into the summary (US-02 §2.2).** | \"Plan elegido\" always shows `Precio base: <formattedBasePrice>`, then `Precio final estimado: <formattedFinalPrice>`, then either `Ajuste simulado: +<n>% · <reasons>` when `adjustmentPercent > 0` or `Sin ajuste simulado aplicado` when it is `0`, followed by the shared footnote \"Los precios son simulados y no constituyen una oferta comercial.\" The final price is the one used in the confirmation snapshot (§5.3). |\n85: | G6 | **Which document is masked, and is the plate masked too?** | Only the reserved Step 1 key **`documentNumber`** (CO *cédula de ciudadanía*, CL *RUT*) is masked, and only in the read-only \"Tomador\" view. `licensePlate` and every other field render in full. Masking is **display-only** in the view model (§2.2, G12). |\n86: \n87: ### 2.2 Document masking (pure function)\n88: \n89: | # | Gap / edge case | Decision in this spec |\n90: | --- | --- | --- |\n91: | G7 | **\"Partially masked\" has no mask glyph, no count semantics, and no rule for short values.** | Pure helper `maskDocumentNumber(rawValue: string, visibleEnd: number): string` (§5.4). The mask glyph is exactly **`'•'` (U+2022 BULLET)**, **one glyph per hidden character**, so output length equals input length. No ellipsis, no grouping re-insertion, no case transformation, no trimming. `visibleEnd` comes from `countryConfig.documentMaskVisibleEnd` (seeded `4`, Strapi-editable, `min: 0`). |\n92: | G8 | **`documentMaskVisibleEnd = 0`, a value shorter than the mask, and empty input.** | `visibleEnd <= 0` → **fully masked** (all bullets; the safe interpretation of the Strapi minimum). `rawValue.length <= visibleEnd` → returned **verbatim**, with no bullet at all (never \"mask\" a value that has nothing to hide). `''` / whitespace-only input → `''`. The helper never throws for any string/number input; non-finite or non-number `visibleEnd` degrades to `4` before the call (already done by `mapCountryConfig`, §4.3). |\n93: | G9 | **Chilean RUT verification digit (`-K`, or `-<digit>`) and trailing characters.** | Because the visible tail is copied verbatim, the default `visibleEnd = 4` already reveals the suffix (e.g. `12345678-K` → `••••••78-K`). To prevent a small `visibleEnd` from hiding the verifier alone, a **RUT-suffix rule** applies: when `visibleEnd > 0` and `rawValue` matches `/-[0-9Kk]$/`, the effective visible tail is `min(rawValue.length, max(visibleEnd, 2))` — the dash and verifier are always revealed together. `visibleEnd <= 0` still wins and fully masks. Trailing whitespace is displayed as part of the tail (no silent trimming); Step 1 already applies the configured `trim` transform to document fields. Full examples in §5.4. |\n94: | G10 | **Masking must not leak into back-edit or storage.** | The raw value in `WizardStore.step1Values()` and in `sessionStorage` is **never modified**. Masking is applied only when constructing the summary view model. \"Editar datos\" returns the original value to the Step 1 input. The confirmation snapshot stores the **masked** display string (it is a presentation artifact) and never the raw document (§5.3). |\n95: \n96: ### 2.3 Terms by country and zero-redeploy loading\n97: \n98: | # | Gap / edge case | Decision in this spec |\n99: | --- | --- | --- |\n100: | G11 | **\"Text varies by country and is managed by the business team from Strapi\" is only true if Step 3 fetches live.** | On **every** Step 3 entry (forward from plans, back from Step 1, after a country switch, and after every retry) the page calls `CatalogueApi.getCountryConfig(country())`. A reload after a Strapi admin edit therefore shows the new terms and new `documentMaskVisibleEnd` with **zero front-end redeploy** (`AGENTS.md` §4.2). No component-level cache and no reuse of the US-01 `countryConfig` signal as the source of truth for Step 3. Confirmation in §7.4 Q4. |\n101: | G12 | **Terms text can be blank even though the Strapi field is `required: true`.** | `termsAndConditions.trim().length === 0`, or a `null` config from `mapCountryConfig`, maps to the blocking **`empty-terms`** state: a panel \"No pudimos cargar los términos y condiciones para este país.\" with \"Reintentar\" and \"Volver a planes\"; the terms checkbox and Pay button are **not rendered** (or are rendered disabled), and `canPay()` is `false`. It is distinct from `error` (network/HTTP) and from `loading`. |\n102: | G13 | **Terms acceptance is per-page state; what happens on retry/re-entry?** | `termsAccepted` is an in-memory signal initialised to `false` on each Step 3 entry and on every country switch. A failed payment keeps it `true` so the visitor can retry without re-accepting (AC4). A successful payment freezes the snapshot before any reset. It is deliberately **not persisted** (§7.4 Q3). |\n103: | G14 | **Terms text is long and must be readable and scrollable, not a trap.** | Rendered in a bounded, scrollable `<section>` with a visible heading \"Términos y condiciones\", `tabindex=\"0\"` so keyboard users can scroll it, and an accessible name via `aria-labelledby`. Preserve line breaks with `white-space: pre-line`. The checkbox is outside the scroll region so it is never scrolled out of reach. |\n104: | G15 | **Existing databases will keep the old placeholder terms.** | `seed.ts` is create-only (Checkpoint 2 invariant), so changing the seed constants affects **fresh databases only**. Option A (recommended): keep strict create-only idempotency and require the business to edit terms in the Strapi admin for existing environments. Option B: a guarded one-time migration that overwrites only the exact known placeholder string. This is a human decision in §7.4 Q1; no migration code is written until it is approved. |\n105: \n106: ### 2.4 Simulated payment, double-submit and confirmation\n107: \n108: | # | Gap / edge case | Decision in this spec |\n109: | --- | --- | --- |\n110: | G16 | **\"Pay button enabled only after accepting the terms\" is necessary but not sufficient.** | `canPay()` requires **all** of: `summaryLoadStatus === 'ready'`, `termsAvailable === true`, `termsAccepted === true`, and `paymentStatus` is `idle` or `rejected`. Pay is disabled while `loading`, `error`, `empty-terms`, `processing` and `confirmed`. The disabled rule is enforced in `canPay()` **and** reflected as `disabled` + `aria-disabled` on the button (§6.2). |\n111: | G17 | **\"Payment cannot be submitted twice\" needs an exact mechanism, not a UI hope.** | `WizardStore.submitPayment()` performs a **synchronous check-and-set with no `await` between them**: if `paymentStatus()` is `processing` or `confirmed`, or `!canPay()`, it returns immediately; otherwise it sets `paymentStatus = 'processing'` in the same tick before calling the service. A second click, a double `Enter`, or a programmatic second call in the same tick therefore sees `'processing'` and does nothing. The button is additionally disabled during processing. Verified by `US03-U09` and `US03-E10`. |\n112: | G18 | **A simulated service still needs a defined boundary and zero sensitive data.** | Injectable, frontend-only `SimulatedPaymentService` (`providedIn: 'root'`). Its request carries only `country`, `locale`, `documentMaskVisibleEnd` already-derived display data, the selected plan `documentId`, the terms `documentId`, and a boolean test hook. **No card number, CVV, expiry, billing address, token or PII beyond the wizard's existing values.** It issues **no HTTP request at all** and returns a `Promise<SimulatedPaymentResult>` after a short injectable delay (default `600 ms`, `0` in unit tests). Success/failure is decided by the deterministic test hook (§7.4 Q2). |\n113: | G19 | **\"Simulated quote number\" has no format or uniqueness rule.** | `COT-${country}-${YYYYMMDD}-${XXXXXX}`: the `YYYYMMDD` part is the local calendar date from an injected `QuoteClock` at the moment of success; `XXXXXX` is six uppercase base-36 characters derived from a stable, order-independent hash of the canonical confirmation payload (§5.4). Same payload + same date → byte-identical number across browsers and reloads. CO and CL are distinguished by their prefix. Tests inject a fixed clock and assert exact strings; no `Math.random()`, no `Date.now()` inside the number derivation. |\n114: | G20 | **Confirmation must be a snapshot, not a live view that changes under the user.** | On success the store builds a `QuoteConfirmation` and **`Object.freeze`s** it and its nested records/arrays before setting `paymentStatus = 'confirmed'`. The confirmation view renders only from that frozen object: quote number, masked document, plan name, final price and localized issue timestamp. Subsequent form edits, Strapi edits or price changes cannot alter a displayed confirmation. |\n115: | G21 | **Rejected payment must not lose information (AC4).** | On rejection only `paymentStatus` changes to `'rejected'`. `step1` values, selected plan, `countryConfig`, `termsAccepted` and all sessionStorage data are untouched. An `role=\"alert\"` panel shows \"No pudimos procesar el pago simulado. Inténtalo de nuevo; tus datos siguen guardados.\" plus a \"Reintentar pago\" button. The visitor never returns to Step 1 or re-enters data to retry. |\n116: | G22 | **\"Nueva cotización\" versus back-navigation are different operations.** | \"Editar datos\" and \"Cambiar plan\" are pure navigation (`quotePath('quote')` / `quotePath('plans')`) and preserve `step1` + `selectedPlanDocumentId` in store and sessionStorage. Only the confirmation view's **\"Nueva cotización\"** calls `store.reset(country)` → `persistence.clear(country)`, then navigates to `/:country/quote`. No other control in US-03 clears storage. |\n117: | G23 | **Reload after a confirmed (simulated) payment is ambiguous.** | Decision: confirmation and `termsAccepted` are **in-memory only** and not added to `PersistedWizardStateV1`. A reload therefore restores Step 1 + selected plan, passes `step2CompleteGuard`, and lands on a fresh summary with terms unchecked and no confirmation shown. This avoids persisting a \"paid\" flag for a payment that never happened. Alternative (persist a confirmation under a separate key) is flagged in §7.4 Q3. |\n118: \n119: ### 2.5 Async states and assumptions taken as given\n120: \n121: | # | Gap / edge case | Decision in this spec |\n122: | --- | --- | --- |\n123: | G24 | **Async views need explicit loading/error states (`AGENTS.md` §4.4) absent from the story.** | `loading` → `aria-busy=\"true\"`, skeletons for the three sections, no checkbox and no Pay. `error` → `role=\"alert\"` \"No pudimos cargar la configuración de tu país.\" + \"Reintentar\" + \"Volver a planes\"; storage untouched. Retry reuses `loadSummaryContext(country)` once, no backoff. |\n124: | G25 | **`sessionStorage` may throw** (private mode, disabled storage). | `WizardPersistenceService` already swallows storage errors; US-03 inherits that. Payment and confirmation still work in memory; dev-console warning only, no blocking notice. |\n125: | G26 | **Country switch on the summary page.** | `CountryContextService.country()` changes → the page calls `loadSummaryContext(newCountry)`, resets `termsAccepted = false`, and re-derives the summary from the new country's Strapi data. A frozen confirmation is abandoned by a country switch (the visitor is leaving that quote). |\n126: | G27 | **Assumptions taken as given.** | (a) Strapi on `http://localhost:1337`, Angular on `http://localhost:4200`, no token in `frontend/src/environments/*`. (b) `draftAndPublish: true`; unauthenticated `find` returns published rows only. (c) All seed/fixture data is strictly fictitious and all user-facing copy is localized Spanish. (d) Payment is simulated and front-end-only; there is no quote POST. (e) The 2026 dates in examples are illustrative; the quote number uses the injected clock. |\n127: \n128: ---\n129: \n130: ## 3. Multi-Country Seed Contract (`CO` & `CL`)\n131: \n132: US-03 changes **copy inside an existing collection type only**. There is no new schema, no new permission and no new seed entity beyond upgrading the two strings already present in `backend/src/bootstrap/seed-data.ts`.\n133: \n134: ### 3.1 `country-config` seed records (existing schema, upgraded copy)\n135: \n136: Natural key for `country-config` is **`country`** (`strapi-multi-country` §3). Both rows are created by the idempotent bootstrap with `status: 'published'`.\n137: \n138: | Field | Colombia (`CO`) | Chile (`CL`) | Change in US-03 |\n139: | --- | --- | --- | --- |\n140: | `country` | `CO` | `CL` | none |\n141: | `countryName` | `Colombia` | `Chile` | none |\n142: | `currency` | `COP` | `CLP` | none |\n143: | `localeCode` | `es-CO` | `es-CL` | none |\n144: | `termsAndConditions` | upgraded (§3.2) | upgraded (§3.2) | **yes** — placeholder → country-distinct simulated text |\n145: | `documentMaskVisibleEnd` | `4` | `4` | none (value retained; Strapi-editable at runtime per G7) |\n146: \n147: ### 3.2 Upgraded `termsAndConditions` seed copy (simulated, fictitious, localized)\n148: \n149: The current constants are explicitly placeholders:\n150: \n151: - `TERMS_AND_CONDITIONS_CO` / `TERMS_AND_CONDITIONS_CL` currently read `TÉRMINOS Y CONDICIONES — TEXTO DE DEMOSTRACIÓN (PENDIENTE DE APROBACIÓN LEGAL)…` (`seed-data.ts` lines 85–93).\n152: \n153: They must be upgraded to the following **country-distinct** text. Both remain clearly simulated (never presented as real legal terms), preserve the \"no real policy / no real payment\" warning required by `AGENTS.md` §4.1/§4.3, and use country-specific currency and local-authorization wording:\n154: \n155: **Colombia (`es-CO`)** — proposed `TERMS_AND_CONDITIONS_CO` value:\n156: \n157: > TÉRMINOS Y CONDICIONES SIMULADOS — COLOMBIA.\n158: > Este documento es ficticio y se utiliza únicamente para demostrar el funcionamiento del cotizador.\n159: > La cotización es simulada: no constituye una póliza de seguros, no genera cobertura alguna y no crea obligaciones de pago reales.\n160: > Los datos del tomador y del vehículo se utilizan solo en tu navegador durante esta sesión y no se envían a ningún servidor para contratar un seguro.\n161: > Los precios y los ajustes mostrados son ilustrativos y no representan una oferta comercial.\n162: > El pago es simulado y no se procesa ningún instrumento de pago real.\n163: > Los precios están expresados en pesos colombianos (COP).\n164: > Para contratar un seguro de auto real debes acudir a una aseguradora autorizada en Colombia y revisar los términos y condiciones vigentes conforme a la regulación local.\n165: \n166: **Chile (`es-CL`)** — proposed `TERMS_AND_CONDITIONS_CL` value:\n167: \n168: > TÉRMINOS Y CONDICIONES SIMULADOS — CHILE.\n169: > Este documento es ficticio y se utiliza únicamente para demostrar el funcionamiento del cotizador.\n170: > La cotización es simulada: no constituye una póliza de seguros, no genera cobertura alguna y no crea obligaciones de pago reales.\n171: > Los datos del tomador y del vehículo se utilizan solo en tu navegador durante esta sesión y no se envían a ningún servidor para contratar un seguro.\n172: > Los precios y los ajustes mostrados son ilustrativos y no representan una oferta comercial.\n173: > El pago es simulado y no se procesa ningún instrumento de pago real.\n174: > Los precios están expresados en pesos chilenos (CLP).\n175: > Para contratar un seguro de auto real debes acudir a una aseguradora autorizada en Chile y revisar los términos y condiciones vigentes conforme a la regulación local.\n176: \n177: Notes:\n178: \n179: - The two strings are **different** (country name, currency sentence and local-authorization sentence) so `US03-E03`/`US03-E04` can prove country scoping. Both are entirely Spanish; no English source words remain.\n180: - The seed copy is a **demo baseline**, not legal sign-off. The business team may replace it in the Strapi admin at any time; because Step 3 fetches live (G11), that edit takes effect on reload with no redeploy. Human approval of this copy is §7.4 Q1.\n181: \n182: ### 3.3 No new content types, no permission changes\n183: \n184: | Check | Result |\n185: | --- | --- |\n186: | New Strapi collection type required? | **No.** `country-config` already has `termsAndConditions` (`text`, required) and `documentMaskVisibleEnd` (`integer`, default `4`, `min: 0`) in `schema.json`. |\n187: | New Public action required? | **No.** `country-config.find` and `country-config.findOne` are already in the six-action allowlist (`public-permissions.ts` lines 15–22). |\n188: | New `/api/` URL in the front end? | **No.** `CatalogueApi.getCountryConfig()` already owns the only `country-configs` URL (`ADR-001` §4.4 C5). |\n189: | Seed idempotency invariant | Unchanged: create only when neither a draft nor a published row exists for the natural key; never delete or overwrite business-edited rows (`seed.ts` §1–§12). See G15 / §7.4 Q1 for the existing-DB caveat. |\n190: \n191: ### 3.4 Seed coverage and invariants\n192: \n193: | Invariant | `CO` | `CL` |\n194: | --- | --- | --- |\n195: | Published `country-config` rows | 1 | 1 |\n196: | `termsAndConditions` is non-blank after upgrade | yes | yes |\n197: | Terms strings differ from each other | yes | yes |\n198: | `documentMaskVisibleEnd` | `4` | `4` |\n199: | All copy localized Spanish (`es-CO` / `es-CL`) | yes | yes |\n200: | All data strictly fictitious | yes | yes |\n201: \n202: ---\n203: \n204: ## 4. Strapi 5 Content Model & REST API Contract\n205: \n206: ### 4.1 `country-config` content type (`api::country-config.country-config`) — unchanged schema\n207: \n208: | Attribute | Type | Constraints | Relevance to US-03 |\n209: | --- | --- | --- | --- |\n210: | `country` | `enumeration` | required, unique; `CO \\| CL` | Filter key for the canonical query. |\n211: | `countryName` | `string` | required | Read into `CountryConfig`; not rendered on Step 3. |\n212: | `currency` | `enumeration` | required; `COP \\| CLP` | Drives the footnote/price currency already formatted by US-02. |\n213: | `localeCode` | `string` | required | `es-CO` / `es-CL`; drives `formatIsoDate()` and localized chrome. `locale` remains reserved; never rename this field. |\n214: | `termsAndConditions` | `text` | required | **The terms text.** Read live; blank/whitespace → `empty-terms` (G12). |\n215: | `documentMaskVisibleEnd` | `integer` | default `4`, `min: 0` | The mask tail length for `maskDocumentNumber()` (G7–G9). |\n216: \n217: Options: `draftAndPublish: true`; no relations, no media, no i18n, no components. US-03 does **not** edit `schema.json`.\n218: \n219: ### 4.2 Canonical query URL (exact string) and live-refresh contract\n220: \n221: ```http\n222: GET {apiBaseUrl}/api/country-configs?filters[country][$eq]=CO\n223: GET {apiBaseUrl}/api/country-configs?filters[country][$eq]=CL\n224: ```\n225: \n226: Rules:\n227: \n228: - `CatalogueApi.getCountryConfig(country)` is the **only** builder of these URLs; exactly one `filters[country][$eq]` per request, no `populate`, no `locale`, no `status`, no extra `pagination` parameter.\n229: - Unauthenticated `GET`, **no `Authorization` header**, no cookies, no credentials mode (`ADR-002` §4.1, §4.3).\n230: - The page calls this method **on every Step 3 entry and every retry** (G11). It does **not** reuse a module-level cache and does **not** treat the US-01 `countryConfig` signal as authoritative for Step 3.\n231: - Static rule inherited from `US01-U22`: zero `'/api/'` literals anywhere in `frontend/src/app/**` except `catalogue.api.ts` and `environments/`.\n232: \n233: ### 4.3 Flattened Strapi 5 response shapes (no `.attributes`)\n234: \n235: `GET /api/country-configs?filters[country][$eq]=CO` → `200` (published row; terms abbreviated here with `…` for readability — the real value is the full §3.2 string):\n236: \n237: ```json\n238: {\n239:   \"data\": [\n240:     {\n241:       \"id\": 1,\n242:       \"documentId\": \"cfgcol0000000000000001\",\n243:       \"country\": \"CO\",\n244:       \"countryName\": \"Colombia\",\n245:       \"currency\": \"COP\",\n246:       \"localeCode\": \"es-CO\",\n247:       \"termsAndConditions\": \"TÉRMINOS Y CONDICIONES SIMULADOS — COLOMBIA. …\",\n248:       \"documentMaskVisibleEnd\": 4,\n249:       \"publishedAt\": \"2026-11-24T10:00:00.000Z\"\n250:     }\n251:   ],\n252:   \"meta\": { \"pagination\": { \"page\": 1, \"pageSize\": 25, \"pageCount\": 1, \"total\": 1 } }\n253: }\n254: ```\n255: \n256: `GET /api/country-configs?filters[country][$eq]=CL` → `200` (distinct text, `es-CL`, `CLP`, `documentId` `cfgcll0000000000000001`).\n257: \n258: `mapCountryConfig()` accepts the row only when `id` is a number, `documentId` and `countryName` are strings, `rowCountry === requested country`, `currency` is `COP`/`CLP`, and `termsAndConditions` is a **string**; it falls back to the country's static locale and to mask `4` when those are invalid (`catalogue.api.ts` lines 420–467). A blank-but-valid string still maps to `CountryConfig` and is caught by the page as `empty-terms` (G12).\n259: \n260: Additional shapes the client must tolerate:\n261: \n262: | Shape | Mapping |\n263: | --- | --- |\n264: | `{\"data\": []}` → `null` | `mapCountryConfig` returns `null` → **`empty-terms`** (G12), not `error`. |\n265: | `{\"data\": [{\"termsAndConditions\": \"   \"}]}` | Valid `CountryConfig` with blank text → **`empty-terms`** (G12). |\n266: | `400` malformed query, `401`/`403` permission regression, `404` path typo, `500`/network failure | Any thrown `HttpErrorResponse` or non-`2xx` → **`error`** (G24), never `empty-terms`; sessionStorage untouched. |\n267: | `data[0].documentMaskVisibleEnd` = `0`, negative, or a string | `0` is honoured (full mask); negative/string degrades to `4` per existing mapper (G8). |\n268: \n269: ### 4.4 Public role permission contract (ADR-002) — unchanged, six read-only actions\n270: \n271: | Content type / action | `find` | `findOne` | `create` | `update` | `delete` |\n272: | --- | --- | --- | --- | --- | --- |\n273: | `api::form-field.form-field` | ALLOWED | ALLOWED | DENIED | DENIED | DENIED |\n274: | `api::country-config.country-config` | **ALLOWED (re-exercised live by US-03)** | **ALLOWED** | DENIED | DENIED | DENIED |\n275: | `api::insurance-plan.insurance-plan` | ALLOWED | ALLOWED | DENIED | DENIED | DENIED |\n276: | Any other `api::*`, `plugin::*`, `admin::*` | DENIED | DENIED | DENIED | DENIED | DENIED |\n277: | API tokens (any type, any scope) | **NONE ISSUED / NONE SHIPPED** | — | — | — | — |\n278: \n279: The complete Public permission set remains exactly **six read-only actions**. `POST`/`PUT`/`DELETE` on any content type return `401`/`403`; no `Authorization` header is ever sent; no write token exists in `frontend/src/environments/*`. The simulated payment adds **zero** network requests. Verify with `ADR-002` §4.6 V2, V4–V6, V10, V11, V14 and `US03-E16`.\n280: \n281: ---\n282: \n283: ## 5. Angular 21 Architecture & Typed Contracts\n284: \n285: All components: standalone, `ChangeDetectionStrategy.OnPush`, `inject()`, signal `input()`/`output()`, `@if` / `@for (… ; track …)` / `@switch`, zero `NgModule`, zero `any` (`AGENTS.md` §4.1, `angular-dynamic-wizard` §1). Zero new `/api/` literals (§4.2).\n286: \n287: ### 5.1 Typed data contracts (`frontend/src/app/core/models/`)\n288: \n289: Reuse `CountryCode`, `CurrencyCode`, `AppLocale`, `FormValue`, `CatalogueStatus`, `CountryConfig`, `QuotedPlan`, `PersistedWizardStateV1` from US-01/US-02. **Add** (no existing interface is modified):\n290: \n291: ```ts\n292: // ---- Summary view models (computed only, never persisted) ----\n293: \n294: export interface SummaryRow {\n295:   readonly key: string;\n296:   /** Verbatim form-field.label from the freshly fetched Strapi catalogue. */\n297:   readonly label: string;\n298:   /** Already localized/derived display string (option label, Sí/No, formatted date, masked doc, —). */\n299:   readonly value: string;\n300: }\n301: \n302: export interface SummarySection {\n303:   readonly id: 'policyholder' | 'vehicle';\n304:   readonly heading: string;\n305:   readonly rows: readonly SummaryRow[];\n306: }\n307: \n308: /** Reads only from the US-02 QuotedPlan — never recomputes pricing. */\n309: export interface PlanSummary {\n310:   readonly name: string;\n311:   readonly shortDescription: string;\n312:   readonly basePriceText: string;\n313:   readonly finalPriceText: string;\n314:   readonly adjustmentText: string;\n315:   readonly footnote: string;\n316:   /** Machine-readable integer for <data [attr.value]>. */\n317:   readonly finalPrice: number;\n318: }\n319: \n320: // ---- Step 3 lifecycle ----\n321: \n322: export type SummaryLoadStatus = 'idle' | 'loading' | 'ready' | 'empty-terms' | 'error';\n323: export type PaymentStatus = 'idle' | 'processing' | 'rejected' | 'confirmed';\n324: \n325: // ---- Simulated payment boundary (frontend only, zero network, zero card data) ----\n326: \n327: export interface SimulatedPaymentRequest {\n328:   readonly country: CountryCode;\n329:   readonly locale: AppLocale;\n330:   readonly planDocumentId: string;\n331:   readonly termsDocumentId: string;\n332:   /** Deterministic failure hook; false for the shipped happy path (§7.4 Q2). */\n333:   readonly shouldFail: boolean;\n334:   /** Injectable in unit tests; default 600 ms in the service. */\n335:   readonly delayMs?: number;\n336: }\n337: \n338: export type SimulatedPaymentResult =\n339:   | { readonly ok: true }\n340:   | { readonly ok: false; readonly code: 'SIMULATED_REJECTION' };\n341: \n342: /** Frozen at success; the confirmation view renders ONLY from this object. */\n343: export interface QuoteConfirmation {\n344:   readonly quoteNumber: string;\n345:   readonly country: CountryCode;\n346:   readonly locale: AppLocale;\n347:   readonly currency: CurrencyCode;\n348:   /** ISO timestamp from QuoteClock, formatted for display at render time. */\n349:   readonly issuedAt: string;\n350:   readonly policyholder: readonly SummaryRow[];\n351:   readonly vehicle: readonly SummaryRow[];\n352:   readonly planName: string;\n353:   readonly finalPrice: number;\n354:   readonly formattedFinalPrice: string;\n355:   readonly termsDocumentId: string;\n356: }\n357: ```\n358: \n359: `QuoteConfirmation` stores the **masked** document value from `SummaryRow` and never the raw `documentNumber` (G10). `PersistedWizardStateV1` is unchanged — no confirmation, `termsAccepted`, or `paymentStatus` field is added (G23).\n360: \n361: ### 5.2 Live `countryConfig` load — `CatalogueApi` unchanged\n362: \n363: ```ts\n364: // core/catalogue/catalogue.api.ts — NO new method, NO signature change\n365: getCountryConfig(country: CountryCode): Observable<CountryConfig | null>; // existing (US-01)\n366: ```\n367: \n368: US-03 only **calls** this method from the Step 3 page/store. Behavioural reliance (already implemented, re-asserted here as a contract):\n369: \n370: 1. Build exactly `GET {apiBaseUrl}/api/country-configs?filters[country][$eq]=<country>` (§4.2).\n371: 2. `mapCountryConfig()` validates the flattened row and returns `CountryConfig | null`; `termsAndConditions` must be a string, `documentMaskVisibleEnd` degrades to `4` when invalid (§4.3).\n372: 3. An empty `data` array maps to `null`; a non-`2xx`/network error propagates as `HttpErrorResponse`.\n373: 4. **No cache in the store or the page.** `loadSummaryContext(country)` re-subscribes on every entry and retry so Strapi edits are visible on reload (G11, `US03-E05`).\n374: \n375: ### 5.3 `WizardStore` Step 3 signals and methods (extended, not replaced)\n376: \n377: ```ts\n378: // features/quote/wizard.store.ts — extended, NOT replaced\n379: private readonly summaryStatusSignal = signal<SummaryLoadStatus>('idle');\n380: private readonly summaryErrorSignal = signal<string | null>(null);\n381: private readonly summaryConfigSignal = signal<CountryConfig | null>(null);\n382: private readonly termsAcceptedSignal = signal(false);\n383: private readonly paymentStatusSignal = signal<PaymentStatus>('idle');\n384: private readonly confirmationSignal = signal<QuoteConfirmation | null>(null);\n385: \n386: readonly summaryStatus = this.summaryStatusSignal.asReadonly();\n387: readonly summaryError = this.summaryErrorSignal.asReadonly();\n388: readonly summaryConfig = this.summaryConfigSignal.asReadonly();\n389: readonly termsAccepted = this.termsAcceptedSignal.asReadonly();\n390: readonly paymentStatus = this.paymentStatusSignal.asReadonly();\n391: readonly confirmation = this.confirmationSignal.asReadonly();\n392: \n393: readonly termsAvailable = computed<boolean>(() => {\n394:   const config = this.summaryConfig();\n395:   return config !== null && config.termsAndConditions.trim().length > 0;\n396: });\n397: \n398: readonly canPay = computed<boolean>(() =>\n399:   this.summaryStatus() === 'ready' &&\n400:   this.termsAvailable() &&\n401:   this.termsAccepted() &&\n402:   (this.paymentStatus() === 'idle' || this.paymentStatus() === 'rejected')\n403: );\n404: \n405: readonly summarySections = computed<readonly SummarySection[]>(...); // §5.4, from fields() + step1Values()\n406: readonly planSummary = computed<PlanSummary | null>(...);             // §5.4, from selectedPlan()/quotedPlans\n407: \n408: async loadSummaryContext(country: CountryCode): Promise<void>;\n409: setTermsAccepted(accepted: boolean): void;\n410: submitPayment(): void;              // synchronous check-and-set; see below\n411: async retrySummary(country: CountryCode): Promise<void>;\n412: ```\n413: \n414: **Lifecycle:**\n415: \n416: - **`loadSummaryContext(country)`:** set `summaryStatus = 'loading'`, `summaryError = null`, `termsAccepted = false`, `paymentStatus = 'idle'`, `confirmation = null` → `getCountryConfig(country)` → on error set `summaryStatus = 'error'` and keep all Step 1/plan/storage state → on `null` or blank terms set `summaryStatus = 'empty-terms'` → otherwise set `summaryConfig`, `summaryStatus = 'ready'`.\n417: - **`retrySummary(country)`:** identical to `loadSummaryContext(country)`, once, no backoff, no storage clearing.\n418: - **`setTermsAccepted(accepted)`:** only writes the signal; never triggers navigation or persistence.\n419: - **Payment retry after rejection:** \"Reintentar pago\" calls `submitPayment()` **again on the same loaded context** — it does **not** call `loadSummaryContext()`, so `termsAccepted` stays `true` and Step 1/plan/config are untouched (G21). Only a full page reload or an explicit entry re-navigation resets them.\n420: - **`newQuote(country)`:** delegates to the existing `reset(country)`, which calls `persistence.clear(country)` and resets every signal including the new Step 3 ones; the component then navigates to `quotePath('quote')` (G22).\n421: \n422: **Strict synchronous double-submit lock (G17) — exact order:**\n423: \n424: ```ts\n425: submitPayment(): void {\n426:   // 1. synchronous guards — no await anywhere before the lock is set\n427:   if (this.paymentStatus() === 'processing' || this.paymentStatus() === 'confirmed') return;\n428:   if (!this.canPay()) return;\n429: \n430:   // 2. build the request from synchronous state only\n431:   const request = this.buildPaymentRequest();\n432: \n433:   // 3. LOCK: same tick as the guards\n434:   this.paymentStatusSignal.set('processing');\n435: \n436:   // 4. async work starts only AFTER the lock\n437:   void this.finishPayment(request);\n438: }\n439: ```\n440: \n441: `finishPayment()` awaits `SimulatedPaymentService.pay()`, then either (a) builds the frozen confirmation, sets `paymentStatus = 'confirmed'`, or (b) sets `paymentStatus = 'rejected'`. It catches **all** failures and always maps them to `'rejected'` — an unhandled rejection can never leave the UI stuck in `processing`. No `await` may be inserted between steps 1 and 3 by a future refactor; `US03-U09` guards this ordering.\n442: \n443: ### 5.4 Pure domain helpers (no Angular imports, never throw on valid typed input)\n444: \n445: ```ts\n446: /** One bullet per hidden char; visible tail verbatim; RUT -K protection (G7–G9). */\n447: export function maskDocumentNumber(rawValue: string, visibleEnd: number): string;\n448: \n449: /** ISO YYYY-MM-DD → Intl.DateTimeFormat(locale, { year:'numeric', month:'long', day:'numeric' }). */\n450: export function formatIsoDate(iso: string, locale: AppLocale): string;\n451: \n452: /** COT-<CO|CL>-<YYYYMMDD>-<XXXXXX>; deterministic FNV-1a over a canonical payload (G19). */\n453: export function buildQuoteNumber(\n454:   country: CountryCode,\n455:   payload: Readonly<Record<string, string>>,\n456:   clock: Readonly<{ readonly today: Date }>,\n457: ): string;\n458: \n459: /** Derived, never persisted; resolves labels/options/booleans/blanks (G1–G6). */\n460: export function buildSummarySections(\n461:   fields: readonly FormFieldConfig[],\n462:   values: Readonly<Record<string, FormValue>>,\n463:   documentMaskVisibleEnd: number,\n464:   yes: string,\n465:   no: string,\n466:   blankPlaceholder: string,\n467: ): readonly SummarySection[];\n468: \n469: export function buildPlanSummary(quoted: QuotedPlan, copy: PlanSummaryCopy): PlanSummary;\n470: ```\n471: \n472: **`maskDocumentNumber` normative algorithm:**\n473: \n474: ```text\n475: MASK = '•'  (U+2022)\n476: if rawValue.trim().length === 0            -> return ''\n477: if visibleEnd <= 0                         -> return MASK.repeat(rawValue.length)\n478: if rawValue.length <= visibleEnd           -> return rawValue\n479: visible = visibleEnd\n480: if /-[0-9Kk]$/.test(rawValue)              -> visible = min(rawValue.length, max(visibleEnd, 2))\n481: return MASK.repeat(rawValue.length - visible) + rawValue.slice(rawValue.length - visible)\n482: ```\n483: \n484: Worked examples (all fictitious — tests assert these exactly):\n485: \n486: | `rawValue` | `visibleEnd` | Result | Note |\n487: | --- | --- | --- | --- |\n488: | `123456789` | `4` | `•••••6789` | CO document, 9 chars |\n489: | `12345678-5` | `4` | `••••••78-5` | CL RUT, numeric verifier |\n490: | `12345678-K` | `4` | `••••••78-K` | CL RUT, `K` verifier preserved verbatim |\n491: | `12345678-k` | `4` | `••••••78-k` | Lowercase `k` preserved (no case change) |\n492: | `12345678-K` | `1` | `••••••••-K` | RUT rule extends the tail to the dash + verifier |\n493: | `12345678-K` | `0` | `••••••••••` | Fully masked; `visibleEnd <= 0` wins over the RUT rule |\n494: | `1234` | `4` | `1234` | Nothing to hide |\n495: | `12` | `4` | `12` | Short input |\n496: | `  ` | `4` | `` | Whitespace-only → empty |\n497: \n498: **`buildQuoteNumber` normative algorithm:**\n499: \n500: ```text\n501: DATE = YYYYMMDD of clock.today (local calendar date, no UTC conversion)\n502: canonical = [country, ...Object.keys(payload).sort().map(k => k + '=' + payload[k])].join('|')\n503: hash = FNV-1a 32-bit over the UTF-16 code units of canonical   // start 0x811C9DC5, prime 0x01000193\n504: XXXXXX = hash.toString(36).toUpperCase().padStart(6, '0').slice(-6)\n505: return `COT-${country}-${DATE}-${XXXXXX}`\n506: ```\n507: \n508: `payload` is the canonical confirmation payload: the display rows (already masked), `planDocumentId`, `termsDocumentId` and `locale`. It **excludes** `issuedAt` and any random value, so identical inputs + identical clock produce an identical number. FNV-1a is chosen because it is pure, dependency-free and byte-identical across browsers and Node. Example shape (illustrative): `COT-CO-20261124-0A7K3P`; tests assert against the fixed-clock/fixed-payload expected value, not against a live clock.\n509: \n510: **`formatIsoDate`:** parse `YYYY-MM-DD` into numbers and construct `new Date(y, m - 1, d)` (local calendar, no `Date.parse` UTC shift); an unparseable ISO string is returned unchanged rather than throwing.\n511: \n512: ### 5.5 `SimulatedPaymentService` (frontend only)\n513: \n514: ```ts\n515: // core/payment/simulated-payment.service.ts\n516: @Injectable({ providedIn: 'root' })\n517: export class SimulatedPaymentService {\n518:   pay(request: SimulatedPaymentRequest): Promise<SimulatedPaymentResult> {\n519:     // no HttpClient, no fetch, no WebSocket, no storage access\n520:     // resolves { ok: true } or { ok: false, code: 'SIMULATED_REJECTION' } after request.delayMs ?? 600\n521:   }\n522: }\n523: ```\n524: \n525: Contract:\n526: \n527: | Rule | Detail |\n528: | --- | --- |\n529: | Zero network | No `HttpClient`, `fetch`, `XMLHttpRequest`, `WebSocket` or backend call. `US03-E16` asserts no new `/api/**` request on Pay. |\n530: | Zero sensitive data | Request type contains no card/expiry/CVV/address/token field; tests assert the service is called with exactly the typed keys (§5.1). |\n531: | Injectable delay | Default `600 ms`; unit tests pass `delayMs: 0`. No `setTimeout` loop, no retry inside the service. |\n532: | Deterministic outcome | `shouldFail: true` → `{ ok: false, code: 'SIMULATED_REJECTION' }`; otherwise `{ ok: true }`. The trigger mechanism is a Checkpoint 3 decision (§7.4 Q2). |\n533: | No throw for the rejection path | A rejection is a **result value**, not an exception; only unexpected programmer errors throw, and `finishPayment()` still maps them to `rejected`. |\n534: \n535: ### 5.6 Components, routing, shared copy and layout\n536: \n537: | Component | Responsibility |\n538: | --- | --- |\n539: | `QuoteStep3SummaryPageComponent` | **Replaces** `SummaryPlaceholderPageComponent` (files `quote-step3-summary-page.{ts,html,scss}`). Calls `loadSummaryContext(country())` on entry and on country change, renders stepper (step 3 active), owns heading focus and the seven states. |\n540: | `SummarySectionComponent` | One read-only `<dl>` section (\"Tomador\"/\"Vehículo\") from a `SummarySection` signal `input()`. No local state. |\n541: | `TermsPanelComponent` | Scrollable terms `<section>` + the acceptance checkbox with `<label for>`. Signal `input()` of the terms text; `output()` of the checkbox change. |\n542: | `PaymentPanelComponent` | Price lines, Pay button, processing/rejection messaging and the two edit links. Signal `input()` of `PlanSummary`, `canPay`, `paymentStatus`; `output()` of `pay` / `retry`. |\n543: | `QuoteConfirmationComponent` | Renders only the frozen `QuoteConfirmation`: quote number, masked document, plan, final price, \"Nueva cotización\". |\n544: | `StatePanelComponent`, `WizardStepperComponent`, `CountrySwitcherComponent`, `AppShellComponent` | Reused unchanged from US-01/US-02. The stepper remains non-interactive (plain `<li>`); navigation only through buttons/links. |\n545: \n546: `UI_COPY` additions (all neutral Spanish, shared chrome; **all existing keys unchanged**). Country-specific values — terms text, mask length, field labels, option labels — never come from here:\n547: \n548: ```ts\n549: summaryTomadorHeading: 'Tomador',\n550: summaryVehicleHeading: 'Vehículo',\n551: summaryPlanHeading: 'Plan elegido',\n552: summaryLoading: 'Cargando el resumen…',\n553: termsHeading: 'Términos y condiciones',\n554: termsAcceptLabel: 'Acepto los términos y condiciones',\n555: termsUnavailable: 'No pudimos cargar los términos y condiciones para este país.',\n556: summaryErrorTitle: 'No pudimos cargar la configuración de tu país.',\n557: summaryErrorBody: 'Revisa tu conexión e inténtalo de nuevo. Tus datos siguen guardados.',\n558: editData: 'Editar datos',\n559: changePlan: 'Cambiar plan',\n560: pay: 'Pagar',\n561: payProcessing: 'Procesando pago simulado...',\n562: paymentRejected: 'No pudimos procesar el pago simulado. Inténtalo de nuevo; tus datos siguen guardados.',\n563: retryPayment: 'Reintentar pago',\n564: confirmationHeading: '¡Pago simulado confirmado!',\n565: confirmationBody: 'Tu cotización simulada se ha registrado con el siguiente número:',\n566: quoteNumberLabel: 'Número de cotización',\n567: newQuote: 'Nueva cotización',\n568: yes: 'Sí',\n569: no: 'No',\n570: blankPlaceholder: '—',\n571: ```\n572: \n573: Routing table (`app.routes.ts`, lazy `loadComponent`): only the summary row changes.\n574: \n575: | Path | Behaviour |\n576: | --- | --- |\n577: | `''` | `redirectTo: 'co/quote'`, `pathMatch: 'full'` (unchanged) |\n578: | `':country/quote'` | `canActivate: [countryRouteGuard]` → `QuoteStep1PageComponent` (unchanged) |\n579: | `':country/quote/plans'` | `canActivate: [countryRouteGuard, step1CompleteGuard]` → `QuoteStep2PlansPageComponent` (unchanged) |\n580: | `':country/quote/summary'` | `canActivate: [countryRouteGuard, step2CompleteGuard]` → **`QuoteStep3SummaryPageComponent`** (replaces the placeholder) |\n581: | `'**'` | `NotFoundPageComponent` (unchanged) |\n582: \n583: `step2CompleteGuard` is **not modified**: invalid/missing Step 1 → `/:country/quote`; Step 1 valid but `selectedPlan() === null` → `/:country/quote/plans`; otherwise allow. This guarantees the summary never renders without data or a plan.\n584: \n585: ```\n586: QuoteStep3SummaryPage ─reads─▶ WizardStore(summaryStatus, summaryConfig, termsAccepted,\n587:         │                              paymentStatus, confirmation, summarySections, planSummary)\n588:         │                        │\n589:         │                        ├──▶ CatalogueApi.getCountryConfig ──GET──▶ Strapi (live, every entry)\n590:         │                        ├──▶ SimulatedPaymentService.pay() ──▶ in-memory result (NO network)\n591:         │                        └──▶ QuoteClock ──▶ quote-number date\n592:         └──renders─▶ SummarySection[] + TermsPanel + PaymentPanel | QuoteConfirmation\n593:                      ├──\"Editar datos\" ──▶ quotePath('quote')     (state preserved)\n594:                      ├──\"Cambiar plan\" ──▶ quotePath('plans')     (state preserved)\n595:                      └──\"Nueva cotización\" ──▶ reset(country) ──▶ persistence.clear ──▶ quotePath('quote')\n596: ```\n597: \n598: ---\n599: \n600: ## 6. UI States, Accessibility & Responsiveness\n601: \n602: ### 6.1 Explicit states\n603: \n604: | State | Trigger | Rendering | Accessibility |\n605: | --- | --- | --- | --- |\n606: | `loading` | `summaryStatus === 'loading'` (or `'idle'` on first paint) | Stepper visible; three skeleton blocks for Tomador/Vehículo/Plan; **no** terms checkbox and **no** Pay | `<section aria-busy=\"true\">` + polite \"Cargando el resumen…\"; focus on `<h1 tabindex=\"-1\">` on entry |\n607: | `error` | Non-`2xx` / network failure from `getCountryConfig` | `role=\"alert\"` panel: \"No pudimos cargar la configuración de tu país.\" + \"Reintentar\" + \"Volver a planes\"; dev-only HTTP detail; storage untouched | `role=\"alert\"`; heading receives focus; keyboard-reachable actions |\n608: | `empty-terms` | Config `null` **or** `termsAndConditions.trim() === ''` | `role=\"alert\"` panel: \"No pudimos cargar los términos y condiciones para este país.\" + \"Reintentar\" + \"Volver a planes\"; **no checkbox and no Pay** | `role=\"alert\"`; heading receives focus; Pay absent/disabled (G12, G16) |\n609: | `ready` | Valid config with non-blank terms | Three read-only sections + scrollable terms + acceptance checkbox + Pay button (disabled until accepted) | See §6.2; Pay is `disabled` + `aria-disabled=\"true\"` while `!termsAccepted` |\n610: | `processing` | `paymentStatus === 'processing'` after `submitPayment()` | Terms/checkbox/sections remain visible and read-only; Pay shows **\"Procesando pago simulado...\"** and is locked; no second control can start a payment | `disabled` + `aria-disabled=\"true\"` on Pay; `aria-live=\"polite\"` announces the processing label; synchronous lock (G17) |\n611: | `rejected` | `SimulatedPaymentResult.ok === false` (or unexpected throw) | `role=\"alert\"` panel above the still-editable Pay area: \"No pudimos procesar el pago simulado. Inténtalo de nuevo; tus datos siguen guardados.\" + **\"Reintentar pago\"**; terms checkbox stays checked; all data intact | `role=\"alert\"`; heading receives focus; retry is keyboard-reachable; no data lost (G21) |\n[Output truncated. Continue reading with offset: 612]"
+              }
+            ],
+            "metadata": {
+              "truncated": true
+            }
+          },
+          "time": {
+            "created": 1795501207461,
+            "ran": 1795501207538,
+            "completed": 1795501207556
+          }
+        },
+        {
+          "type": "tool",
+          "id": "chatcmpl-tool-a7995b4609f12877",
+          "name": "read",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "path": "backend/src/bootstrap/seed-data.ts",
+              "offset": 1,
+              "limit": 125
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Read file backend/src/bootstrap/seed-data.ts, lines 1-125\n1: /**\n2:  * Seed contract for US-01 (`specs/US-01-policyholder-vehicle-form.md` §3) and\n3:  * US-02 (`specs/US-02-plan-list.md` §3).\n4:  *\n5:  * All copy is fictitious placeholder content in localized Spanish:\n6:  * - `es-CO` for Colombia (`CO`)\n7:  * - `es-CL` for Chile (`CL`)\n8:  *\n9:  * Technical identifiers stay in English (`AGENTS.md` §5).\n10:  */\n11: \n12: export type CountryCode = 'CO' | 'CL';\n13: \n14: export type CurrencyCode = 'COP' | 'CLP';\n15: \n16: export type CountryLocale = 'es-CO' | 'es-CL';\n17: \n18: export type FormFieldType = 'text' | 'number' | 'select' | 'date' | 'checkbox';\n19: \n20: export type FormFieldSection = 'policyholder' | 'vehicle';\n21: \n22: export interface FormFieldOption {\n23:   readonly value: string;\n24:   readonly label: string;\n25: }\n26: \n27: /** Typed mirror of the Strapi `validations` JSON blob (US-01 §5.1). */\n28: export type FormFieldValidations = Readonly<Record<string, unknown>>;\n29: \n30: export interface CountryConfigSeed {\n31:   readonly country: CountryCode;\n32:   readonly countryName: string;\n33:   readonly currency: CurrencyCode;\n34:   readonly localeCode: CountryLocale;\n35:   readonly termsAndConditions: string;\n36:   readonly documentMaskVisibleEnd: number;\n37: }\n38: \n39: export interface FormFieldSeed {\n40:   readonly key: string;\n41:   readonly label: string;\n42:   readonly type: FormFieldType;\n43:   readonly required: boolean;\n44:   readonly validations: FormFieldValidations;\n45:   readonly options?: readonly FormFieldOption[];\n46:   readonly helpText?: string;\n47:   readonly errorMessage?: string;\n48:   readonly order: number;\n49:   readonly country: CountryCode;\n50:   readonly section: FormFieldSection;\n51: }\n52: \n53: /** Typed mirror of one entry in the Strapi `coverages` JSON blob (US-02 §5.1). */\n54: export interface PlanCoverageSeed {\n55:   readonly name: string;\n56:   readonly limit: number;\n57:   readonly deductible: number | null;\n58: }\n59: \n60: /**\n61:  * Typed mirror of an `insurance-plan` document (US-02 §4.1).\n62:  *\n63:  * `basePrice` is a numeric string because Strapi serialises `biginteger`\n64:  * attributes as JSON strings (e.g. `\"350000\"`); values stay well below\n65:  * `Number.MAX_SAFE_INTEGER` so the front end can coerce them with `Number()`.\n66:  */\n67: export interface InsurancePlanSeed {\n68:   readonly key: string;\n69:   readonly name: string;\n70:   readonly shortDescription: string;\n71:   readonly basePrice: string;\n72:   readonly currency: CurrencyCode;\n73:   readonly coverages: readonly PlanCoverageSeed[];\n74:   readonly benefits: readonly string[];\n75:   readonly order: number;\n76:   readonly recommended: boolean;\n77:   readonly active: boolean;\n78:   readonly country: CountryCode;\n79: }\n80: \n81: /**\n82:  * US-03 readiness placeholder only: these terms are never rendered in US-01 and\n83:  * must be replaced with legal-approved text before US-03 sign-off.\n84:  */\n85: const TERMS_AND_CONDITIONS_CO =\n86:   'TÉRMINOS Y CONDICIONES — TEXTO DE DEMOSTRACIÓN (PENDIENTE DE APROBACIÓN LEGAL). ' +\n87:   'Esta cotización es simulada y no constituye una póliza de seguros. ' +\n88:   'El texto definitivo para Colombia será configurado por el área legal en Strapi antes de la publicación del paso de resumen.';\n89: \n90: const TERMS_AND_CONDITIONS_CL =\n91:   'TÉRMINOS Y CONDICIONES — TEXTO DE DEMOSTRACIÓN (PENDIENTE DE APROBACIÓN LEGAL). ' +\n92:   'Esta cotización es simulada y no constituye una póliza de seguros. ' +\n93:   'El texto definitivo para Chile será configurado por el área legal en Strapi antes de la publicación del paso de resumen.';\n94: \n95: export const countryConfigSeeds: readonly CountryConfigSeed[] = [\n96:   {\n97:     country: 'CO',\n98:     countryName: 'Colombia',\n99:     currency: 'COP',\n100:     localeCode: 'es-CO',\n101:     termsAndConditions: TERMS_AND_CONDITIONS_CO,\n102:     documentMaskVisibleEnd: 4,\n103:   },\n104:   {\n105:     country: 'CL',\n106:     countryName: 'Chile',\n107:     currency: 'CLP',\n108:     localeCode: 'es-CL',\n109:     termsAndConditions: TERMS_AND_CONDITIONS_CL,\n110:     documentMaskVisibleEnd: 4,\n111:   },\n112: ];\n113: \n114: /** Colombia: 9 fields — `policyholder` orders 1–6, `vehicle` orders 7–9. */\n115: const COLOMBIA_FORM_FIELDS: readonly FormFieldSeed[] = [\n116:   {\n117:     key: 'documentType',\n118:     label: 'Tipo de documento',\n119:     type: 'select',\n120:     required: true,\n121:     validations: {},\n122:     options: [\n123:       { value: 'CC', label: 'Cédula de ciudadanía' },\n124:       { value: 'CE', label: 'Cédula de extranjería' },\n125:     ],\n[Output truncated. Continue reading with offset: 126]"
+              }
+            ],
+            "metadata": {
+              "truncated": true
+            }
+          },
+          "time": {
+            "created": 1795501207463,
+            "ran": 1795501207539,
+            "completed": 1795501207565
+          }
+        }
+      ],
+      "snapshot": {
+        "start": "72c6161c46157529f6253b0f4fe8c56f05713087",
+        "end": "72c6161c46157529f6253b0f4fe8c56f05713087",
+        "files": []
+      },
+      "finish": "tool-calls",
+      "rawFinish": "tool_calls",
+      "cost": 0,
+      "tokens": {
+        "input": 1691,
+        "output": 77,
+        "reasoning": 0,
+        "cache": {
+          "read": 9216,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_20c36304c001ssY5TW8psnoPEO",
+      "time": {
+        "created": 1795501207632,
+        "firstToken": 1795501210555,
+        "streamed": 1795501210986,
+        "completed": 1795501211065
+      },
+      "type": "assistant",
+      "agent": "strapi-dev",
+      "model": {
+        "id": "big-pickle",
+        "providerID": "opencode",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "reasoning",
+          "text": "I have all the information I need. Let me also read §7.4 Checkpoint 3 Resolution since the user specifically mentioned it. Let me check the remainder of the spec, particularly §7.4.",
+          "native": {
+            "reasoningField": "reasoning_content"
+          },
+          "time": {
+            "created": 1795501210556,
+            "completed": 1795501210983
+          }
+        },
+        {
+          "type": "text",
+          "text": "Let me read the §7.4 Checkpoint 3 Resolution section as specifically requested."
+        },
+        {
+          "type": "tool",
+          "id": "chatcmpl-tool-843d6fadc3831ec3",
+          "name": "grep",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "pattern": "7\\.4|Q1|Checkpoint 3 Resolution|Option A",
+              "path": "specs/US-03-summary-and-payment.md",
+              "limit": 60
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Found 24 matches\nC:\\Users\\MIPC\\.gemini\\antigravity\\scratch\\multi-country-car-insurance\\specs\\US-03-summary-and-payment.md:\n  Line 29: **No new ADR is introduced by this increment.** `ADR-001` §4.1 already declares `country-config.termsAndConditions` and `country-config.documentMaskVisibleEnd`; `ADR-002` §4.1 already grants Public `find`/`findOne` on `country-config` (exercised once in US-01 and now again, live, in US-03); `ADR-003` §4.2 already fixes the persisted shape and §4.4 already governs back-edit continuity. US-03 activates those decisions and makes them testable — it does **not** amend them. No new Strapi collection type, no new Public permission, and no new `/api/` URL is introduced. Every derivation that would change an ADR is instead listed as a Checkpoint 3 open question in §7.4.\n\n  Line 40: | `PersistedWizardStateV1` | `schemaVersion: 1` with `step1` and `selectedPlanDocumentId` only. US-03 **does not add payment fields and does not bump the schema version** (§5.3, §7.4 Q3). \"Editar datos\" and \"Cambiar plan\" preserve both values; only \"Nueva cotización\" clears them. |\n\n  Line 65: | Real payment gateway, real card data, backend quote persistence | Never (`AGENTS.md` §4.1, §4.3) | No card fields, no CVV, no billing address, no `POST`/`PUT`/`DELETE`, no payment token. The only simulated-failure control is a deterministic test hook (§7.4 Q2). |\n\n  Line 68: | Legal approval of the terms text | Human (Checkpoint 3 / business) | Seed copy is explicitly simulated demo copy; real legal text is entered in Strapi by the business team. Flagged in §7.4 Q1. |\n\n  Line 74: The user story is business-level. Each row below is a **gap, edge case, or implicit assumption** in `US-03` and the concrete decision this spec imposes. Every decision is traceable to `AGENTS.md`, an accepted ADR, a skill, the US-01/US-02 contracts, or is flagged in §7.4 for Checkpoint 3.\n\n  Line 100: | G11 | **\"Text varies by country and is managed by the business team from Strapi\" is only true if Step 3 fetches live.** | On **every** Step 3 entry (forward from plans, back from Step 1, after a country switch, and after every retry) the page calls `CatalogueApi.getCountryConfig(country())`. A reload after a Strapi admin edit therefore shows the new terms and new `documentMaskVisibleEnd` with **zero front-end redeploy** (`AGENTS.md` §4.2). No component-level cache and no reuse of the US-01 `countryConfig` signal as the source of truth for Step 3. Confirmation in §7.4 Q4. |\n\n  Line 102: | G13 | **Terms acceptance is per-page state; what happens on retry/re-entry?** | `termsAccepted` is an in-memory signal initialised to `false` on each Step 3 entry and on every country switch. A failed payment keeps it `true` so the visitor can retry without re-accepting (AC4). A successful payment freezes the snapshot before any reset. It is deliberately **not persisted** (§7.4 Q3). |\n\n  Line 104: | G15 | **Existing databases will keep the old placeholder terms.** | `seed.ts` is create-only (Checkpoint 2 invariant), so changing the seed constants affects **fresh databases only**. Option A (recommended): keep strict create-only idempotency and require the business to edit terms in the Strapi admin for existing environments. Option B: a guarded one-time migration that overwrites only the exact known placeholder string. This is a human decision in §7.4 Q1; no migration code is written until it is approved. |\n\n  Line 112: | G18 | **A simulated service still needs a defined boundary and zero sensitive data.** | Injectable, frontend-only `SimulatedPaymentService` (`providedIn: 'root'`). Its request carries only `country`, `locale`, `documentMaskVisibleEnd` already-derived display data, the selected plan `documentId`, the terms `documentId`, and a boolean test hook. **No card number, CVV, expiry, billing address, token or PII beyond the wizard's existing values.** It issues **no HTTP request at all** and returns a `Promise<SimulatedPaymentResult>` after a short injectable delay (default `600 ms`, `0` in unit tests). Success/failure is decided by the deterministic test hook (§7.4 Q2). |\n\n  Line 117: | G23 | **Reload after a confirmed (simulated) payment is ambiguous.** | Decision: confirmation and `termsAccepted` are **in-memory only** and not added to `PersistedWizardStateV1`. A reload therefore restores Step 1 + selected plan, passes `step2CompleteGuard`, and lands on a fresh summary with terms unchecked and no confirmation shown. This avoids persisting a \"paid\" flag for a payment that never happened. Alternative (persist a confirmation under a separate key) is flagged in §7.4 Q3. |\n\n  Line 180: - The seed copy is a **demo baseline**, not legal sign-off. The business team may replace it in the Strapi admin at any time; because Step 3 fetches live (G11), that edit takes effect on reload with no redeploy. Human approval of this copy is §7.4 Q1.\n\n  Line 189: | Seed idempotency invariant | Unchanged: create only when neither a draft nor a published row exists for the natural key; never delete or overwrite business-edited rows (`seed.ts` §1–§12). See G15 / §7.4 Q1 for the existing-DB caveat. |\n\n  Line 332:   /** Deterministic failure hook; false for the shipped happy path (§7.4 Q2). */\n\n  Line 532: | Deterministic outcome | `shouldFail: true` → `{ ok: false, code: 'SIMULATED_REJECTION' }`; otherwise `{ ok: true }`. The trigger mechanism is a Checkpoint 3 decision (§7.4 Q2). |\n\n  Line 678: | **AC4** — Rejected payment | `Given the simulated payment fails / When I click pay / Then I see a clear error message / And I can try again without losing my information` | `US03-U11` rejection result keeps `step1`, plan, `termsAccepted`, storage; `paymentStatus = 'rejected'`. | `US03-E11` failure hook → `role=\"alert\"` rejection copy → \"Reintentar pago\" → success without re-entering data or re-accepting terms. | Use the trigger approved in §7.4 Q2. |\n\n  Line 705: | Rejection fixture | `SimulatedPaymentRequest.shouldFail = true`, `delayMs = 0` in unit tests; E2E injects the same hook via the mechanism approved in §7.4 Q2 |\n\n  Line 709: ### 7.4 Open Questions for Checkpoint 3 (human approval required)\n\n  Line 711: 1. **Terms seed copy and existing databases (§3.2, G15).** Approve the two country-distinct **simulated** terms strings as the demo baseline, understanding they are not legal sign-off. Then choose the migration policy: **Option A (recommended)** — keep the strict create-only idempotency from Checkpoint 2; the seed upgrade affects fresh databases only, and the business edits terms in the Strapi admin for already-running environments; or **Option B** — add a one-time guarded migration that overwrites `termsAndConditions` **only** when it still equals the exact old placeholder string, leaving any business-edited text untouched. Always-overwrite is rejected because it destroys business edits. No migration code is written until a choice is made.\n\n  Line 712: 2. **Simulated payment failure trigger (G18, §5.5).** Choose how testers produce `shouldFail: true`: **Option A (recommended)** — an injectable test hook (Angular injection token / `SimulatedPaymentService` port) used by unit tests and Playwright route/interception fixtures, with **no** failure control in the shipped UI; **Option B** — a clearly labelled \"Simular fallo de pago (solo entorno de prueba)\" panel shown only when `!environment.production`; or **Option C** — a deterministic rule on a fixture value (e.g. a reserved test plan key). Option A keeps the production UI clean; a human must confirm which one `tester-dev` builds against.\n\n  Line 713: 3. **Reload after confirmation and quote-number determinism (G19, G23).** Approve **Option A (recommended)**: confirmation and `termsAccepted` are in-memory only, so a reload restores Step 1 + plan and shows a fresh summary with terms unchecked and no quote number (appropriate for a simulated payment, schemaVersion stays `1`); quote numbers are reproducible from the frozen payload + injected clock via FNV-1a. The alternative — persisting a confirmation under a separate sessionStorage key so it survives reload, and/or using a random suffix — requires an explicit decision and possibly an ADR amendment.\n\n  Line 742: ### Checkpoint 3 Resolution (2026-11-24)\n\n  Line 744: 1. **Terms seed copy and existing databases (§3.2, G15):** **Option A approved** — the country-distinct simulated `TERMS_AND_CONDITIONS_CO` and `TERMS_AND_CONDITIONS_CL` strings are approved as the demo baseline, keeping strict create-only idempotency in `seed.ts` (fresh databases get the updated seed copy automatically; business teams edit existing environments via the Strapi admin). No migration code is added.\n\n  Line 745: 2. **Simulated payment failure trigger (G18, §5.5):** **Option A approved** — injectable test hook (`SIMULATED_PAYMENT_FAILURE_HOOK` / `SIMULATED_PAYMENT_CONFIG` InjectionToken) with **zero** failure-simulation controls in the shipped UI. The default hook implementation reads an optional non-UI runtime flag on `globalThis` (`__WIZARD_SIMULATE_PAYMENT_FAILURE__`) so unit tests inject via `TestBed` and Playwright E2E tests against the Docker build can trigger rejection deterministically (`US03-E11`) without UI clutter, URL hacks, or network traffic.\n\n  Line 746: 3. **Reload after confirmation and quote-number determinism (G19, G23):** **Approved (Option A)** — confirmation and `termsAccepted` remain in-memory only (`PersistedWizardStateV1` stays `schemaVersion: 1`), and quote numbers are deterministically generated via FNV-1a + `QuoteClock` (`COT-<CO|CL>-<YYYYMMDD>-<XXXXXX>`).\n"
+              }
+            ],
+            "metadata": {
+              "matches": 24,
+              "truncated": false
+            }
+          },
+          "time": {
+            "created": 1795501210821,
+            "ran": 1795501210985,
+            "completed": 1795501211016
+          }
+        }
+      ],
+      "snapshot": {
+        "start": "72c6161c46157529f6253b0f4fe8c56f05713087",
+        "end": "72c6161c46157529f6253b0f4fe8c56f05713087",
+        "files": []
+      },
+      "finish": "tool-calls",
+      "rawFinish": "tool_calls",
+      "cost": 0,
+      "tokens": {
+        "input": 18974,
+        "output": 67,
+        "reasoning": 43,
+        "cache": {
+          "read": 10752,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_20c363dc2001W4sYRxyN1rNNsZ",
+      "time": {
+        "created": 1795501211077,
+        "firstToken": 1795501213492,
+        "streamed": 1795501222043,
+        "completed": 1795501222383
+      },
+      "type": "assistant",
+      "agent": "strapi-dev",
+      "model": {
+        "id": "big-pickle",
+        "providerID": "opencode",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "reasoning",
+          "text": "I have all the info I need. Let me carefully build the replacement text.\n\nSpec §3.2 verbatim text:\n\n**Colombia (`es-CO`)** — proposed `TERMS_AND_CONDITIONS_CO` value:\n\n> TÉRMINOS Y CONDICIONES SIMULADOS — COLOMBIA.\n> Este documento es ficticio y se utiliza únicamente para demostrar el funcionamiento del cotizador.\n> La cotización es simulada: no constituye una póliza de seguros, no genera cobertura alguna y no crea obligaciones de pago reales.\n> Los datos del tomador y del vehículo se utilizan solo en tu navegador durante esta sesión y no se envían a ningún servidor para contratar un seguro.\n> Los precios y los ajustes mostrados son ilustrativos y no representan una oferta comercial.\n> El pago es simulado y no se procesa ningún instrumento de pago real.\n> Los precios están expresados en pesos colombianos (COP).\n> Para contratar un seguro de auto real debes acudir a una aseguradora autorizada en Colombia y revisar los términos y condiciones vigentes conforme a la regulación local.\n\n**Chile (`es-CL`)** — proposed `TERMS_AND_CONDITIONS_CL` value:\n\n> TÉRMINOS Y CONDICIONES SIMULADOS — CHILE.\n> Este documento es ficticio y se utiliza únicamente para demostrar el funcionamiento del cotizador.\n> La cotización es simulada: no constituye una póliza de seguros, no genera cobertura alguna y no crea obligaciones de pago reales.\n> Los datos del tomador y del vehículo se utilizan solo en tu navegador durante esta sesión y no se envían a ningún servidor para contratar un seguro.\n> Los precios y los ajustes mostrados son ilustrativos y no representan una oferta comercial.\n> El pago es simulado y no se procesa ningún instrumento de pago real.\n> Los precios están expresados en pesos chilenos (CLP).\n> Para contratar un seguro de auto real debes acudir a una aseguradora autorizada en Chile y revisar los términos y condiciones vigentes conforme a la regulación local.\n\nNow, \"match §3.2 verbatim\" — the text content must be verbatim. The existing pattern uses string concatenation with `'...' + '...' + '...'` with a space at the end of each line to join. I need to be careful to preserve the exact text, including line breaks between statements. The spec blockquotes show each line as a separate line. To preserve verbatim including line breaks, I should use `\\n` between sentences. The spec says \"preserve line breaks with `white-space: pre-line`\" in G14 — so line breaks matter. I'll use `\\n` in the string concatenation.\n\nActually, let me think about this: \"match §3.2 verbatim\" — the wording must be exact. Using `\\n` between lines reproduces the blockquote's line structure exactly. That's the safest interpretation. The existing code uses `' ' +` concatenation (a trailing space). But since G14 mentions `white-space: pre-line` preserving line breaks, and the spec blockquotes have one sentence per line, using `\\n` is most faithful.\n\nLet me write:\n\n```ts\n/**\n * Country-distinct simulated terms copy for US-03 Step 3\n * (`specs/US-03-summary-and-payment.md` §3.2). Fictitious demo baseline only:\n * the business team replaces this text in the Strapi admin for real environments.\n */\nconst TERMS_AND_CONDITIONS_CO =\n  'TÉRMINOS Y CONDICIONES SIMULADOS — COLOMBIA.\\n' +\n  'Este documento es ficticio y se utiliza únicamente para demostrar el funcionamiento del cotizador.\\n' +\n  'La cotización es simulada: no constituye una póliza de seguros, no genera cobertura alguna y no crea obligaciones de pago reales.\\n' +\n  'Los datos del tomador y del vehículo se utilizan solo en tu navegador durante esta sesión y no se envían a ningún servidor para contratar un seguro.\\n' +\n  'Los precios y los ajustes mostrados son ilustrativos y no representan una oferta comercial.\\n' +\n  'El pago es simulado y no se procesa ningún instrumento de pago real.\\n' +\n  'Los precios están expresados en pesos colombianos (COP).\\n' +\n  'Para contratar un seguro de auto real debes acudir a una aseguradora autorizada en Colombia y revisar los términos y condiciones vigentes conforme a la regulación local.';\n\nconst TERMS_AND_CONDITIONS_CL =\n  'TÉRMINOS Y CONDICIONES SIMULADOS — CHILE.\\n' +\n  ...\n```\n\nThe user asked: \"Remove the obsolete comment on `TERMS_AND_CONDITIONS_CO` saying 'US-03 readiness placeholder only' and replace it with an accurate concise JSDoc comment referencing `specs/US-03-summary-and-payment.md` §3.2.\"\n\nSo I should place the JSDoc right before `TERMS_AND_CONDITIONS_CO`. Note there's no JSDoc on CL currently. I could add one too but the task says only update the two constants and replace the CO comment. Adding a shared JSDoc above CO that describes both is fine. Let me keep it concise and accurate, in English (per AGENTS.md §5 comments in English).\n\nWait — careful: \"zero English words\" applies to the seed content strings, not comments. Comments must be English per AGENTS.md §5. Good.\n\nLet me verify the em dash character in the spec: `TÉRMINOS Y CONDICIONES SIMULADOS — COLOMBIA.` — that's U+2014 EM DASH. I'll reproduce it exactly.\n\nNow let me make the edit. I'll replace lines 81-93.\n\nThen verify with `git diff backend/src/bootstrap/seed-data.ts`. Let me also consider running `npx tsc --noEmit` inside backend — the user says \"Verify with TypeScript typecheck only if safe (`npx tsc --noEmit` inside `backend/`) or inspect `git diff` carefully.\" I'll inspect the git diff carefully, which is definitely safe. I could also try typecheck but there's risk of host node_modules issues; the diff inspection is sufficient. Actually let me do both — first check whether backend/node_modules exists with typescript. But the user said don't run npm run build due to better-sqlite3 Linux issue. tsc --noEmit might be safe, but to be conservative I'll just do the diff inspection plus a careful programmatic verification of the string content against the spec (extract and compare). That's a strong verification without any host build.\n\nLet me make the edit now.",
+          "native": {
+            "reasoningField": "reasoning_content"
+          },
+          "time": {
+            "created": 1795501213493,
+            "completed": 1795501222038
+          }
+        },
+        {
+          "type": "text",
+          "text": "I have all required inputs. Now I'll make the single allowed edit — replacing only the two terms constants and the obsolete comment."
+        },
+        {
+          "type": "tool",
+          "id": "chatcmpl-tool-999bed09aa8f2697",
+          "name": "edit",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "path": "backend/src/bootstrap/seed-data.ts",
+              "oldString": "/**\n * US-03 readiness placeholder only: these terms are never rendered in US-01 and\n * must be replaced with legal-approved text before US-03 sign-off.\n */\nconst TERMS_AND_CONDITIONS_CO =\n  'TÉRMINOS Y CONDICIONES — TEXTO DE DEMOSTRACIÓN (PENDIENTE DE APROBACIÓN LEGAL). ' +\n  'Esta cotización es simulada y no constituye una póliza de seguros. ' +\n  'El texto definitivo para Colombia será configurado por el área legal en Strapi antes de la publicación del paso de resumen.';\n\nconst TERMS_AND_CONDITIONS_CL =\n  'TÉRMINOS Y CONDICIONES — TEXTO DE DEMOSTRACIÓN (PENDIENTE DE APROBACIÓN LEGAL). ' +\n  'Esta cotización es simulada y no constituye una póliza de seguros. ' +\n  'El texto definitivo para Chile será configurado por el área legal en Strapi antes de la publicación del paso de resumen.';",
+              "newString": "/**\n * Simulated, fictitious Step 3 terms copy from `specs/US-03-summary-and-payment.md` §3.2.\n * Demo baseline only: the business team replaces this text in the Strapi admin.\n */\nconst TERMS_AND_CONDITIONS_CO =\n  'TÉRMINOS Y CONDICIONES SIMULADOS — COLOMBIA.\\n' +\n  'Este documento es ficticio y se utiliza únicamente para demostrar el funcionamiento del cotizador.\\n' +\n  'La cotización es simulada: no constituye una póliza de seguros, no genera cobertura alguna y no crea obligaciones de pago reales.\\n' +\n  'Los datos del tomador y del vehículo se utilizan solo en tu navegador durante esta sesión y no se envían a ningún servidor para contratar un seguro.\\n' +\n  'Los precios y los ajustes mostrados son ilustrativos y no representan una oferta comercial.\\n' +\n  'El pago es simulado y no se procesa ningún instrumento de pago real.\\n' +\n  'Los precios están expresados en pesos colombianos (COP).\\n' +\n  'Para contratar un seguro de auto real debes acudir a una aseguradora autorizada en Colombia y revisar los términos y condiciones vigentes conforme a la regulación local.';\n\nconst TERMS_AND_CONDITIONS_CL =\n  'TÉRMINOS Y CONDICIONES SIMULADOS — CHILE.\\n' +\n  'Este documento es ficticio y se utiliza únicamente para demostrar el funcionamiento del cotizador.\\n' +\n  'La cotización es simulada: no constituye una póliza de seguros, no genera cobertura alguna y no crea obligaciones de pago reales.\\n' +\n  'Los datos del tomador y del vehículo se utilizan solo en tu navegador durante esta sesión y no se envían a ningún servidor para contratar un seguro.\\n' +\n  'Los precios y los ajustes mostrados son ilustrativos y no representan una oferta comercial.\\n' +\n  'El pago es simulado y no se procesa ningún instrumento de pago real.\\n' +\n  'Los precios están expresados en pesos chilenos (CLP).\\n' +\n  'Para contratar un seguro de auto real debes acudir a una aseguradora autorizada en Chile y revisar los términos y condiciones vigentes conforme a la regulación local.';"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Edited backend/src/bootstrap/seed-data.ts (1 replacement)"
+              }
+            ],
+            "metadata": {
+              "files": [
+                {
+                  "file": "backend/src/bootstrap/seed-data.ts",
+                  "patch": "Index: backend/src/bootstrap/seed-data.ts\n===================================================================\n--- backend/src/bootstrap/seed-data.ts\n+++ backend/src/bootstrap/seed-data.ts\n@@ -78,20 +78,30 @@\n   readonly country: CountryCode;\n }\n \n /**\n- * US-03 readiness placeholder only: these terms are never rendered in US-01 and\n- * must be replaced with legal-approved text before US-03 sign-off.\n+ * Simulated, fictitious Step 3 terms copy from `specs/US-03-summary-and-payment.md` §3.2.\n+ * Demo baseline only: the business team replaces this text in the Strapi admin.\n  */\n const TERMS_AND_CONDITIONS_CO =\n-  'TÉRMINOS Y CONDICIONES — TEXTO DE DEMOSTRACIÓN (PENDIENTE DE APROBACIÓN LEGAL). ' +\n-  'Esta cotización es simulada y no constituye una póliza de seguros. ' +\n-  'El texto definitivo para Colombia será configurado por el área legal en Strapi antes de la publicación del paso de resumen.';\n+  'TÉRMINOS Y CONDICIONES SIMULADOS — COLOMBIA.\\n' +\n+  'Este documento es ficticio y se utiliza únicamente para demostrar el funcionamiento del cotizador.\\n' +\n+  'La cotización es simulada: no constituye una póliza de seguros, no genera cobertura alguna y no crea obligaciones de pago reales.\\n' +\n+  'Los datos del tomador y del vehículo se utilizan solo en tu navegador durante esta sesión y no se envían a ningún servidor para contratar un seguro.\\n' +\n+  'Los precios y los ajustes mostrados son ilustrativos y no representan una oferta comercial.\\n' +\n+  'El pago es simulado y no se procesa ningún instrumento de pago real.\\n' +\n+  'Los precios están expresados en pesos colombianos (COP).\\n' +\n+  'Para contratar un seguro de auto real debes acudir a una aseguradora autorizada en Colombia y revisar los términos y condiciones vigentes conforme a la regulación local.';\n \n const TERMS_AND_CONDITIONS_CL =\n-  'TÉRMINOS Y CONDICIONES — TEXTO DE DEMOSTRACIÓN (PENDIENTE DE APROBACIÓN LEGAL). ' +\n-  'Esta cotización es simulada y no constituye una póliza de seguros. ' +\n-  'El texto definitivo para Chile será configurado por el área legal en Strapi antes de la publicación del paso de resumen.';\n+  'TÉRMINOS Y CONDICIONES SIMULADOS — CHILE.\\n' +\n+  'Este documento es ficticio y se utiliza únicamente para demostrar el funcionamiento del cotizador.\\n' +\n+  'La cotización es simulada: no constituye una póliza de seguros, no genera cobertura alguna y no crea obligaciones de pago reales.\\n' +\n+  'Los datos del tomador y del vehículo se utilizan solo en tu navegador durante esta sesión y no se envían a ningún servidor para contratar un seguro.\\n' +\n+  'Los precios y los ajustes mostrados son ilustrativos y no representan una oferta comercial.\\n' +\n+  'El pago es simulado y no se procesa ningún instrumento de pago real.\\n' +\n+  'Los precios están expresados en pesos chilenos (CLP).\\n' +\n+  'Para contratar un seguro de auto real debes acudir a una aseguradora autorizada en Chile y revisar los términos y condiciones vigentes conforme a la regulación local.';\n \n export const countryConfigSeeds: readonly CountryConfigSeed[] = [\n   {\n     country: 'CO',\n",
+                  "status": "modified",
+                  "additions": 18,
+                  "deletions": 8
+                }
+              ],
+              "truncated": false
+            }
+          },
+          "time": {
+            "created": 1795501219413,
+            "ran": 1795501222041,
+            "completed": 1795501222062
+          }
+        }
+      ],
+      "snapshot": {
+        "start": "72c6161c46157529f6253b0f4fe8c56f05713087",
+        "end": "800f9799d65829ba34bbfa6c4c1537caa2443ddb",
+        "files": [
+          "backend/src/bootstrap/seed-data.ts"
+        ]
+      },
+      "finish": "tool-calls",
+      "rawFinish": "tool_calls",
+      "cost": 0,
+      "tokens": {
+        "input": 2600,
+        "output": 852,
+        "reasoning": 1541,
+        "cache": {
+          "read": 29696,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_20c3669f80015kPvhpt6Z2eev9",
+      "time": {
+        "created": 1795501222395,
+        "firstToken": 1795501225686,
+        "streamed": 1795501226138,
+        "completed": 1795501227191
+      },
+      "type": "assistant",
+      "agent": "strapi-dev",
+      "model": {
+        "id": "big-pickle",
+        "providerID": "opencode",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "reasoning",
+          "text": "Now verify with git diff.",
+          "native": {
+            "reasoningField": "reasoning_content"
+          },
+          "time": {
+            "created": 1795501225687,
+            "completed": 1795501226130
+          }
+        },
+        {
+          "type": "text",
+          "text": "Now let me verify the change with a careful diff inspection and a programmatic verbatim comparison against the spec."
+        },
+        {
+          "type": "tool",
+          "id": "chatcmpl-tool-86895cec6db33d6d",
+          "name": "shell",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "git diff -- backend/src/bootstrap/seed-data.ts",
+              "workdir": "C:\\Users\\MIPC\\.gemini\\antigravity\\scratch\\multi-country-car-insurance"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "warning: in the working copy of 'backend/src/bootstrap/seed-data.ts', LF will be replaced by CRLF the next time Git touches it\ndiff --git a/backend/src/bootstrap/seed-data.ts b/backend/src/bootstrap/seed-data.ts\nindex c2db81b..6b91801 100644\n--- a/backend/src/bootstrap/seed-data.ts\n+++ b/backend/src/bootstrap/seed-data.ts\n@@ -79,18 +79,28 @@ export interface InsurancePlanSeed {\n }\n \n /**\n- * US-03 readiness placeholder only: these terms are never rendered in US-01 and\n- * must be replaced with legal-approved text before US-03 sign-off.\n+ * Simulated, fictitious Step 3 terms copy from `specs/US-03-summary-and-payment.md` §3.2.\n+ * Demo baseline only: the business team replaces this text in the Strapi admin.\n  */\n const TERMS_AND_CONDITIONS_CO =\n-  'TÉRMINOS Y CONDICIONES — TEXTO DE DEMOSTRACIÓN (PENDIENTE DE APROBACIÓN LEGAL). ' +\n-  'Esta cotización es simulada y no constituye una póliza de seguros. ' +\n-  'El texto definitivo para Colombia será configurado por el área legal en Strapi antes de la publicación del paso de resumen.';\n+  'TÉRMINOS Y CONDICIONES SIMULADOS — COLOMBIA.\\n' +\n+  'Este documento es ficticio y se utiliza únicamente para demostrar el funcionamiento del cotizador.\\n' +\n+  'La cotización es simulada: no constituye una póliza de seguros, no genera cobertura alguna y no crea obligaciones de pago reales.\\n' +\n+  'Los datos del tomador y del vehículo se utilizan solo en tu navegador durante esta sesión y no se envían a ningún servidor para contratar un seguro.\\n' +\n+  'Los precios y los ajustes mostrados son ilustrativos y no representan una oferta comercial.\\n' +\n+  'El pago es simulado y no se procesa ningún instrumento de pago real.\\n' +\n+  'Los precios están expresados en pesos colombianos (COP).\\n' +\n+  'Para contratar un seguro de auto real debes acudir a una aseguradora autorizada en Colombia y revisar los términos y condiciones vigentes conforme a la regulación local.';\n \n const TERMS_AND_CONDITIONS_CL =\n-  'TÉRMINOS Y CONDICIONES — TEXTO DE DEMOSTRACIÓN (PENDIENTE DE APROBACIÓN LEGAL). ' +\n-  'Esta cotización es simulada y no constituye una póliza de seguros. ' +\n-  'El texto definitivo para Chile será configurado por el área legal en Strapi antes de la publicación del paso de resumen.';\n+  'TÉRMINOS Y CONDICIONES SIMULADOS — CHILE.\\n' +\n+  'Este documento es ficticio y se utiliza únicamente para demostrar el funcionamiento del cotizador.\\n' +\n+  'La cotización es simulada: no constituye una póliza de seguros, no genera cobertura alguna y no crea obligaciones de pago reales.\\n' +\n+  'Los datos del tomador y del vehículo se utilizan solo en tu navegador durante esta sesión y no se envían a ningún servidor para contratar un seguro.\\n' +\n+  'Los precios y los ajustes mostrados son ilustrativos y no representan una oferta comercial.\\n' +\n+  'El pago es simulado y no se procesa ningún instrumento de pago real.\\n' +\n+  'Los precios están expresados en pesos chilenos (CLP).\\n' +\n+  'Para contratar un seguro de auto real debes acudir a una aseguradora autorizada en Chile y revisar los términos y condiciones vigentes conforme a la regulación local.';\n \n export const countryConfigSeeds: readonly CountryConfigSeed[] = [\n   {\n"
+              }
+            ],
+            "metadata": {
+              "status": "completed",
+              "truncated": false,
+              "exit": 0
+            }
+          },
+          "time": {
+            "created": 1795501225863,
+            "ran": 1795501226132,
+            "completed": 1795501227135
+          }
+        },
+        {
+          "type": "tool",
+          "id": "chatcmpl-tool-9805d647dec1e557",
+          "name": "shell",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "git status --porcelain",
+              "workdir": "C:\\Users\\MIPC\\.gemini\\antigravity\\scratch\\multi-country-car-insurance"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": " M backend/src/bootstrap/seed-data.ts\n"
+              }
+            ],
+            "metadata": {
+              "status": "completed",
+              "truncated": false,
+              "exit": 0
+            }
+          },
+          "time": {
+            "created": 1795501225986,
+            "ran": 1795501226134,
+            "completed": 1795501227137
+          }
+        }
+      ],
+      "snapshot": {
+        "start": "800f9799d65829ba34bbfa6c4c1537caa2443ddb",
+        "end": "800f9799d65829ba34bbfa6c4c1537caa2443ddb",
+        "files": []
+      },
+      "finish": "tool-calls",
+      "rawFinish": "tool_calls",
+      "cost": 0,
+      "tokens": {
+        "input": 2442,
+        "output": 113,
+        "reasoning": 6,
+        "cache": {
+          "read": 32256,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_20c367cc1001XeOh639yWy7RiR",
+      "time": {
+        "created": 1795501227204,
+        "firstToken": 1795501231505,
+        "streamed": 1795501236063,
+        "completed": 1795501237479
+      },
+      "type": "assistant",
+      "agent": "strapi-dev",
+      "model": {
+        "id": "big-pickle",
+        "providerID": "opencode",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "reasoning",
+          "text": "The diff is clean — only the intended section changed. Now let me programmatically verify the strings match §3.2 verbatim. I'll write a small PowerShell script that extracts the blockquote lines from the spec (lines 157-164 and 168-175) and evaluates the TS string concatenations from seed-data.ts, then compares.\n\nLet me be careful with PowerShell encoding for UTF-8 and accented characters. Use `[System.IO.File]::ReadAllText($path, [System.Text.Encoding]::UTF8)`.\n\nApproach:\n- Read spec lines 157..164 (0-based 156..163) for CO, and 168..175 (0-based 167..174) for CL, strip leading `> `.\n- Read seed-data.ts, extract the region between `const TERMS_AND_CONDITIONS_CO =` and `export const countryConfigSeeds`, pull the single-quoted string literals with regex, unescape `\\n`, concatenate.\n- Compare.\n\nLet me write that script inline. PowerShell regex with `'...'` literals: `'([^']*)'` — the strings don't contain apostrophes, good. Need to handle `\\n` replacement: `.Replace('\\n', \"`n\")`.\n\nFor the spec lines, strip `> ` prefix: `$line -replace '^> ?', ''`.\n\nLet me do it.",
+          "native": {
+            "reasoningField": "reasoning_content"
+          },
+          "time": {
+            "created": 1795501231505,
+            "completed": 1795501236059
+          }
+        },
+        {
+          "type": "text",
+          "text": "The diff is clean and scoped to exactly the intended lines. Let me now programmatically verify that both string constants match §3.2 of the spec byte-for-byte."
+        },
+        {
+          "type": "tool",
+          "id": "chatcmpl-tool-90a00b1eb16662a5",
+          "name": "shell",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "$spec = [System.IO.File]::ReadAllText('specs/US-03-summary-and-payment.md', [System.Text.Encoding]::UTF8) -split \"`n\"\n$src  = [System.IO.File]::ReadAllText('backend/src/bootstrap/seed-data.ts', [System.Text.Encoding]::UTF8)\n\nfunction Get-SpecTerms([int]$first, [int]$last) {\n  ($spec[($first-1)..($last-1)] | ForEach-Object { $_ -replace '^> ?', '' }) -join \"`n\"\n}\nfunction Get-SeedTerms([string]$name) {\n  $start = $src.IndexOf(\"const $name =\")\n  $end   = $src.IndexOf('export const countryConfigSeeds', $start)\n  $block = $src.Substring($start, $end - $start)\n  $parts = [regex]::Matches($block, \"'([^']*)'\") | ForEach-Object { $_.Groups[1].Value.Replace('\\n', \"`n\") }\n  $parts -join ''\n}\n\n$coSpec = Get-SpecTerms 157 164\n$clSpec = Get-SpecTerms 168 175\n$coSeed = Get-SeedTerms 'TERMS_AND_CONDITIONS_CO'\n$clSeed = Get-SeedTerms 'TERMS_AND_CONDITIONS_CL'\n\n'CO verbatim match: ' + ($coSeed -ceq $coSpec)\n'CL verbatim match: ' + ($clSeed -ceq $clSpec)\n'CO/CL distinct:    ' + ($coSeed -cne $clSeed)\n'CO lines: ' + ($coSeed -split \"`n\").Count + ' | CL lines: ' + ($clSeed -split \"`n\").Count\n\n$asciiOnly = ($coSeed + $clSeed) -cmatch '(?i)\\b(the|and|policy|payment|insurance|real|this|is|for|with)\\b'\n'Unexpected English words: ' + $asciiOnly\n\n'CO contains Colombia/COP: ' + ($coSeed.Contains('Colombia') -and $coSeed.Contains('COP'))\n'CL contains Chile/CLP:    ' + ($clSeed.Contains('Chile') -and $clSeed.Contains('CLP'))\n\n$cfg = $src.Substring($src.IndexOf('export const countryConfigSeeds'))\n$cfg = $cfg.Substring(0, $cfg.IndexOf('];'))\n'documentMaskVisibleEnd occurrences (expect 2, both 4): ' + ([regex]::Matches($cfg, 'documentMaskVisibleEnd:\\s*(\\d+)') | ForEach-Object { $_.Groups[1].Value } | Join-String -Separator ', ')",
+              "workdir": "C:\\Users\\MIPC\\.gemini\\antigravity\\scratch\\multi-country-car-insurance"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "CO verbatim match: False\r\nCL verbatim match: True\r\nCO/CL distinct:    True\r\nCO lines: 15 | CL lines: 8\r\nUnexpected English words: True\r\nCO contains Colombia/COP: True\r\nCL contains Chile/CLP:    True\r\nJoin-String : El t�rmino 'Join-String' no se reconoce como nombre de un cmdlet, funci�n, archivo de script o programa \r\nejecutable. Compruebe si escribi� correctamente el nombre o, si incluy� una ruta de acceso, compruebe que dicha ruta \r\nes correcta e int�ntelo de nuevo.\r\nEn l�nea: 33 Car�cter: 162\r\n+ ... (\\d+)') | ForEach-Object { $_.Groups[1].Value } | Join-String -Separa ...\r\n+                                                       ~~~~~~~~~~~\r\n    + CategoryInfo          : ObjectNotFound: (Join-String:String) [], CommandNotFoundException\r\n    + FullyQualifiedErrorId : CommandNotFoundException\r\n \r\n"
+              },
+              {
+                "type": "text",
+                "text": "Exit code: 1"
+              }
+            ],
+            "metadata": {
+              "status": "completed",
+              "truncated": false,
+              "exit": 1
+            }
+          },
+          "time": {
+            "created": 1795501233311,
+            "ran": 1795501236062,
+            "completed": 1795501237393
+          }
+        }
+      ],
+      "snapshot": {
+        "start": "800f9799d65829ba34bbfa6c4c1537caa2443ddb",
+        "end": "800f9799d65829ba34bbfa6c4c1537caa2443ddb",
+        "files": []
+      },
+      "finish": "tool-calls",
+      "rawFinish": "tool_calls",
+      "cost": 0,
+      "tokens": {
+        "input": 1208,
+        "output": 655,
+        "reasoning": 284,
+        "cache": {
+          "read": 34560,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_20c36a4f8001VCJdhJ4vePhgxj",
+      "time": {
+        "created": 1795501237504,
+        "firstToken": 1795501240901,
+        "streamed": 1795501244798,
+        "completed": 1795501245735
+      },
+      "type": "assistant",
+      "agent": "strapi-dev",
+      "model": {
+        "id": "big-pickle",
+        "providerID": "opencode",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "reasoning",
+          "text": "CO verbatim match False and CO lines 15 vs 8. That suggests my Get-SeedTerms for CO captured extra strings from the JSDoc comment! The JSDoc comment contains backticks but also `'...'`? Let me look: `* Simulated, fictitious Step 3 terms copy from `specs/US-03-summary-and-payment.md` §3.2.` — no single quotes. `* Demo baseline only: the business team replaces this text in the Strapi admin.` — no single quotes. Hmm.\n\nWait — `$src.IndexOf(\"const $name =\")` for `TERMS_AND_CONDITIONS_CO` will match the first occurrence, which is in `export interface CountryConfigSeed`? No... Let's check. `termsAndConditions: string;` — not `const TERMS...`. Hmm, but in the JSDoc there's no \"const TERMS\".\n\nAh — I see: the start index points to `const TERMS_AND_CONDITIONS_CO =` which is inside the JSDoc? No. Let's think about the 15 lines. The spec CO block is lines 157-164 = 8 lines. The seed got 15 lines. That's 7 extra lines. Hmm — maybe the regex `'([^']*)'` matched the string fragments in the comment? No.\n\nWait: `$src.IndexOf('export const countryConfigSeeds', $start)` — the `$start` is the index of `const TERMS_AND_CONDITIONS_CO =`... but wait, my Get-SeedTerms looks for `const $name =` — but there's also `termsAndConditions: TERMS_AND_CONDITIONS_CO,` inside countryConfigSeeds. That's after the end boundary though.\n\nHmm, 15 lines. Let me print the CO seed to debug. Also possible: the spec CO blockquote includes line 157-164 but the em dash or something. Let me dump both with visible line markers. Also the \"Unexpected English words: True\" is suspicious — maybe due to debug extraction capturing English comment text (\"the\", \"this\", \"is\"). That supports the theory that the JSDoc comment was included — but the JSDoc has no single quotes... Actually wait, regex `'([^']*)'` on the block starting at `const TERMS_AND_CONDITIONS_CO =` — if `$start` is found earlier than expected, e.g., in the phrase \"const TERMS_AND_CONDITIONS_CO\" inside... hmm.\n\nActually! The issue: PowerShell `$src.IndexOf(\"const $name =\")` — with `$name = 'TERMS_AND_CONDITIONS_CO'`, the string is \"const TERMS_AND_CONDITIONS_CO =\". Fine.\n\nLet me just debug by printing.",
+          "native": {
+            "reasoningField": "reasoning_content"
+          },
+          "time": {
+            "created": 1795501240901,
+            "completed": 1795501244794
+          }
+        },
+        {
+          "type": "text",
+          "text": "Let me debug the comparison script — the spec extraction appears to have included extra lines for CO."
+        },
+        {
+          "type": "tool",
+          "id": "chatcmpl-tool-8d7fba5d9d57d582",
+          "name": "shell",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "$spec = [System.IO.File]::ReadAllText('specs/US-03-summary-and-payment.md', [System.Text.Encoding]::UTF8) -split \"`n\"\n$src  = [System.IO.File]::ReadAllText('backend/src/bootstrap/seed-data.ts', [System.Text.Encoding]::UTF8)\n'--- SPEC 155-177 (raw, 1-based) ---'\nfor ($i=154; $i -le 176; $i++) { '{0,4}: [{1}]' -f ($i+1), $spec[$i] }\n'--- SEED block ---'\n$start = $src.IndexOf('const TERMS_AND_CONDITIONS_CO =')\n$end = $src.IndexOf('export const countryConfigSeeds', $start)\n'start=' + $start + ' end=' + $end\n$src.Substring($start, $end-$start)",
+              "workdir": "C:\\Users\\MIPC\\.gemini\\antigravity\\scratch\\multi-country-car-insurance"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "--- SPEC 155-177 (raw, 1-based) ---\r\n 155: [**Colombia (`es-CO`)** - proposed `TERMS_AND_CONDITIONS_CO` value:]\r\n 156: []\r\n 157: [> T�RMINOS Y CONDICIONES SIMULADOS - COLOMBIA.]\r\n 158: [> Este documento es ficticio y se utiliza �nicamente para demostrar el funcionamiento del cotizador.]\r\n 159: [> La cotizaci�n es simulada: no constituye una p�liza de seguros, no genera cobertura alguna y no crea obligaciones de pago reales.]\r\n 160: [> Los datos del tomador y del veh�culo se utilizan solo en tu navegador durante esta sesi�n y no se env�an a ning�n servidor para contratar un seguro.]\r\n 161: [> Los precios y los ajustes mostrados son ilustrativos y no representan una oferta comercial.]\r\n 162: [> El pago es simulado y no se procesa ning�n instrumento de pago real.]\r\n 163: [> Los precios est�n expresados en pesos colombianos (COP).]\r\n 164: [> Para contratar un seguro de auto real debes acudir a una aseguradora autorizada en Colombia y revisar los t�rminos y condiciones vigentes conforme a la regulaci�n local.]\r\n 165: []\r\n 166: [**Chile (`es-CL`)** - proposed `TERMS_AND_CONDITIONS_CL` value:]\r\n 167: []\r\n 168: [> T�RMINOS Y CONDICIONES SIMULADOS - CHILE.]\r\n 169: [> Este documento es ficticio y se utiliza �nicamente para demostrar el funcionamiento del cotizador.]\r\n 170: [> La cotizaci�n es simulada: no constituye una p�liza de seguros, no genera cobertura alguna y no crea obligaciones de pago reales.]\r\n 171: [> Los datos del tomador y del veh�culo se utilizan solo en tu navegador durante esta sesi�n y no se env�an a ning�n servidor para contratar un seguro.]\r\n 172: [> Los precios y los ajustes mostrados son ilustrativos y no representan una oferta comercial.]\r\n 173: [> El pago es simulado y no se procesa ning�n instrumento de pago real.]\r\n 174: [> Los precios est�n expresados en pesos chilenos (CLP).]\r\n 175: [> Para contratar un seguro de auto real debes acudir a una aseguradora autorizada en Chile y revisar los t�rminos y condiciones vigentes conforme a la regulaci�n local.]\r\n 176: []\r\n 177: [Notes:]\r\n--- SEED block ---\r\nstart=2586 end=4387\r\nconst TERMS_AND_CONDITIONS_CO =\n  'T�RMINOS Y CONDICIONES SIMULADOS - COLOMBIA.\\n' +\n  'Este documento es ficticio y se utiliza �nicamente para demostrar el funcionamiento del cotizador.\\n' +\n  'La cotizaci�n es simulada: no constituye una p�liza de seguros, no genera cobertura alguna y no crea obligaciones de pago reales.\\n' +\n  'Los datos del tomador y del veh�culo se utilizan solo en tu navegador durante esta sesi�n y no se env�an a ning�n servidor para contratar un seguro.\\n' +\n  'Los precios y los ajustes mostrados son ilustrativos y no representan una oferta comercial.\\n' +\n  'El pago es simulado y no se procesa ning�n instrumento de pago real.\\n' +\n  'Los precios est�n expresados en pesos colombianos (COP).\\n' +\n  'Para contratar un seguro de auto real debes acudir a una aseguradora autorizada en Colombia y revisar los t�rminos y condiciones vigentes conforme a la regulaci�n local.';\n\nconst TERMS_AND_CONDITIONS_CL =\n  'T�RMINOS Y CONDICIONES SIMULADOS - CHILE.\\n' +\n  'Este documento es ficticio y se utiliza �nicamente para demostrar el funcionamiento del cotizador.\\n' +\n  'La cotizaci�n es simulada: no constituye una p�liza de seguros, no genera cobertura alguna y no crea obligaciones de pago reales.\\n' +\n  'Los datos del tomador y del veh�culo se utilizan solo en tu navegador durante esta sesi�n y no se env�an a ning�n servidor para contratar un seguro.\\n' +\n  'Los precios y los ajustes mostrados son ilustrativos y no representan una oferta comercial.\\n' +\n  'El pago es simulado y no se procesa ning�n instrumento de pago real.\\n' +\n  'Los precios est�n expresados en pesos chilenos (CLP).\\n' +\n  'Para contratar un seguro de auto real debes acudir a una aseguradora autorizada en Chile y revisar los t�rminos y condiciones vigentes conforme a la regulaci�n local.';\n\n\r\n"
+              }
+            ],
+            "metadata": {
+              "status": "completed",
+              "truncated": false,
+              "exit": 0
+            }
+          },
+          "time": {
+            "created": 1795501243965,
+            "ran": 1795501244797,
+            "completed": 1795501245680
+          }
+        }
+      ],
+      "snapshot": {
+        "start": "800f9799d65829ba34bbfa6c4c1537caa2443ddb",
+        "end": "800f9799d65829ba34bbfa6c4c1537caa2443ddb",
+        "files": []
+      },
+      "finish": "tool-calls",
+      "rawFinish": "tool_calls",
+      "cost": 0,
+      "tokens": {
+        "input": 1381,
+        "output": 255,
+        "reasoning": 580,
+        "cache": {
+          "read": 35584,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_20c36c530001YTJIr91mz2M9MH",
+      "time": {
+        "created": 1795501245748,
+        "firstToken": 1795501248579,
+        "streamed": 1795501256314,
+        "completed": 1795501257413
+      },
+      "type": "assistant",
+      "agent": "strapi-dev",
+      "model": {
+        "id": "big-pickle",
+        "providerID": "opencode",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "reasoning",
+          "text": "The console output shows `?` for em dash and accents — that's PowerShell console encoding, not file corruption (the git diff showed correct characters). \n\nThe problem with my earlier script: `Get-SeedTerms 'TERMS_AND_CONDITIONS_CO'` used `$src.IndexOf(\"const $name =\")` where `$name` is a parameter... Wait, I passed `'TERMS_AND_CONDITIONS_CO'` as an argument. In the function, `param` wasn't declared, so `$name` picked up the positional arg — fine. But the end index used `'export const countryConfigSeeds'` — that works.\n\nHmm, but the CO got 15 lines. That means the regex matched more than 8 strings. Oh! I see it: in `Get-SeedTerms`, `$src.IndexOf(\"const $name =\")` — for CO, PowerShell string interpolation of `$name =` might be parsed as variable `$name` followed by ` =`. Fine.\n\nActually wait — the issue is the regex `[regex]::Matches($block, \"'([^']*)'\")` combined with `-replace '^> ?'`. Hmm.\n\nLet me reconsider: the CO result had 15 lines and CL had 8. What's the difference? For CL, `$start` = index of `const TERMS_AND_CONDITIONS_CL =`. For CO, the block from CO to `export const countryConfigSeeds` includes BOTH constants (CO and CL) = 16 lines. Yes! That's it — 8 CO lines + 8 CL lines = 16, minus... 15 because of trailing newline splitting. So the CO extraction block included the CL constant too. My script bug, not a file problem.\n\nFix: for CO, end boundary should be `const TERMS_AND_CONDITIONS_CL =`. Let me redo with proper extraction per constant, and write output to a UTF-8 file to avoid console mojibake, or just output booleans and character code points. Actually I'll compare code-point sequences and output booleans only, plus detect any ASCII English words via regex on the spec strings (spec includes \"COP\" which is fine; but my earlier regex included `real` — \"real\" appears in Spanish \"no crea obligaciones de pago reales\" and \"seguro de auto real\"! So that regex was wrong too). Let me use a more careful check: extract all words from the strings and list any that are not in a Spanish whitelist... simpler: just check for explicitly English-only tokens like \"the\", \"and\", \"policy\", \"payment\", \"insurance\", \"this\", \"with\", \"for\", \"is\". Spanish \"de auto real\" — \"real\" is Spanish too, exclude. Let me check tokens: \"TÉRMINOS Y CONDICIONES SIMULADOS COLOMBIA Este documento es ficticio y se utiliza únicamente para demostrar el funcionamiento del cotizador La cotización es simulada no constituye una póliza de seguros no genera cobertura alguna y no crea obligaciones de pago reales Los datos del tomador y del vehículo se utilizan solo en tu navegador durante esta sesión y no se envían a ningún servidor para contratar un seguro Los precios y los ajustes mostrados son ilustrativos y no representan una oferta comercial El pago es simulado y no se procesa ningún instrumento de pago real Los precios están expresados en pesos colombianos COP Para contratar un seguro de auto real debes acudir a una aseguradora autorizada en Colombia y revisar los términos y condiciones vigentes conforme a la regulación local\"\n\nAll Spanish. \"solo\" (Spanish), \"real\" (Spanish). Good. I'll check for `\\b(the|and|for|with|this|is|are|policy|payment|insurance|simulated|real payment|server)\\b` — \"server\" not present (servidor). Fine.\n\nLet me redo verification properly. Also check documentMaskVisibleEnd with a simpler approach (avoid Join-String which isn't available in PowerShell 5.1).",
+          "native": {
+            "reasoningField": "reasoning_content"
+          },
+          "time": {
+            "created": 1795501248579,
+            "completed": 1795501256305
+          }
+        },
+        {
+          "type": "text",
+          "text": "The mismatch was a bug in my verification script (the CO block captured both constants), not in the file. Let me rerun with correct boundaries."
+        },
+        {
+          "type": "tool",
+          "id": "chatcmpl-tool-b42a2a176422e0a7",
+          "name": "shell",
+          "executed": false,
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "$spec = [System.IO.File]::ReadAllText('specs/US-03-summary-and-payment.md', [System.Text.Encoding]::UTF8) -split \"`n\"\n$src  = [System.IO.File]::ReadAllText('backend/src/bootstrap/seed-data.ts', [System.Text.Encoding]::UTF8)\n\nfunction Get-SpecTerms([int]$first, [int]$last) {\n  ($spec[($first-1)..($last-1)] | ForEach-Object { $_ -replace '^> ?', '' }) -join \"`n\"\n}\nfunction Get-SeedTerms([string]$from, [string]$to) {\n  $start = $src.IndexOf(\"const $from =\")\n  $end   = $src.IndexOf($to, $start)\n  $block = $src.Substring($start, $end - $start)\n  ([regex]::Matches($block, \"'([^']*)'\") | ForEach-Object { $_.Groups[1].Value.Replace('\\n', \"`n\") }) -join ''\n}\n\n$coSpec = Get-SpecTerms 157 164\n$clSpec = Get-SpecTerms 168 175\n$coSeed = Get-SeedTerms 'TERMS_AND_CONDITIONS_CO' 'const TERMS_AND_CONDITIONS_CL ='\n$clSeed = Get-SeedTerms 'TERMS_AND_CONDITIONS_CL' 'export const countryConfigSeeds'\n\n'CO verbatim match (case-sensitive): ' + ($coSeed -ceq $coSpec)\n'CL verbatim match (case-sensitive): ' + ($clSeed -ceq $clSpec)\n'CO/CL strings distinct:            ' + ($coSeed -cne $clSeed)\n'CO line count: ' + ($coSeed -split \"`n\").Count + ' | CL line count: ' + ($clSeed -split \"`n\").Count\n'CO non-blank: ' + ($coSeed.Trim().Length -gt 0) + ' | CL non-blank: ' + ($clSeed.Trim().Length -gt 0)\n'CO has Colombia + COP: ' + ($coSeed.Contains('Colombia') -and $coSeed.Contains('(COP)'))\n'CL has Chile + CLP:    ' + ($clSeed.Contains('Chile') -and $clSeed.Contains('(CLP)'))\n'CO has no CLP/Chile:   ' + (-not ($coSeed.Contains('CLP') -or $coSeed.Contains('Chile')))\n'CL has no COP/Colombia:' + (-not ($clSeed.Contains('COP') -or $clSeed.Contains('Colombia')))\n'No English tokens in either: ' + (-not (($coSeed + $clSeed) -cmatch '(?i)\\b(the|and|for|with|this|is|are|policy|payment|insurance|simulated|server)\\b'))\n\n$cfg = $src.Substring($src.IndexOf('export const countryConfigSeeds'))\n$cfg = $cfg.Substring(0, $cfg.IndexOf('];'))\n$masks = @([regex]::Matches($cfg, 'documentMaskVisibleEnd:\\s*(\\d+)') | ForEach-Object { $_.Groups[1].Value })\n'documentMaskVisibleEnd values: ' + ($masks -join ', ')\n'countryConfigSeeds country keys: ' + ((@([regex]::Matches($cfg, \"country: '(\\w+)'\") | ForEach-Object { $_.Groups[1].Value })) -join ', ')",
+              "workdir": "C:\\Users\\MIPC\\.gemini\\antigravity\\scratch\\multi-country-car-insurance"
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "CO verbatim match (case-sensitive): True\r\nCL verbatim match (case-sensitive): True\r\nCO/CL strings distinct:            True\r\nCO line count: 8 | CL line count: 8\r\nCO non-blank: True | CL non-blank: True\r\nCO has Colombia + COP: True\r\nCL has Chile + CLP:    True\r\nCO has no CLP/Chile:   True\r\nCL has no COP/Colombia:True\r\nNo English tokens in either: True\r\ndocumentMaskVisibleEnd values: 4, 4\r\ncountryConfigSeeds country keys: CO, CL\r\n"
+              }
+            ],
+            "metadata": {
+              "status": "completed",
+              "truncated": false,
+              "exit": 0
+            }
+          },
+          "time": {
+            "created": 1795501253564,
+            "ran": 1795501256312,
+            "completed": 1795501257358
+          }
+        }
+      ],
+      "snapshot": {
+        "start": "800f9799d65829ba34bbfa6c4c1537caa2443ddb",
+        "end": "800f9799d65829ba34bbfa6c4c1537caa2443ddb",
+        "files": []
+      },
+      "finish": "tool-calls",
+      "rawFinish": "tool_calls",
+      "cost": 0,
+      "tokens": {
+        "input": 2176,
+        "output": 830,
+        "reasoning": 876,
+        "cache": {
+          "read": 36864,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_20c36f2cf001lWaykLLG1OUaAY",
+      "time": {
+        "created": 1795501257427,
+        "firstToken": 1795501260118,
+        "streamed": 1795501264715,
+        "completed": 1795501264770
+      },
+      "type": "assistant",
+      "agent": "strapi-dev",
+      "model": {
+        "id": "big-pickle",
+        "providerID": "opencode",
+        "variant": "default"
+      },
+      "content": [
+        {
+          "type": "reasoning",
+          "text": "All checks pass. Note the last check for country keys also matched the `country: 'CO'` fields inside... wait, `$cfg` is only the `countryConfigSeeds` array up to `];`, so 2 keys CO, CL. Good.\n\nNow, should I run TypeScript typecheck? User said \"Verify with TypeScript typecheck only if safe (`npx tsc --noEmit` inside `backend/`) or inspect `git diff backend/src/bootstrap/seed-data.ts` carefully.\" I already inspected the diff carefully and did programmatic verification. The change is purely string literals — no type surface changes. Typecheck is unnecessary. But let me check if it's safe — actually, the user explicitly warned against npm run build because host node_modules lacks Linux better-sqlite3. `npx tsc --noEmit` could invoke npx download if typescript isn't installed, which would be a network operation. Better to skip; diff inspection suffices.\n\nLet me also double-check: did my edit accidentally change line endings? The git warning says \"LF will be replaced by CRLF\" — that warning was likely pre-existing for this file. Let me check if the whole file changed line endings — the diff showed only the intended hunk, so no.\n\nLet me also verify that formFieldSeeds and insurancePlanSeeds are completely intact — the diff already confirms only the terms hunk changed. Good.\n\nOne more consideration: \"zero English words\" — the JSDoc comment is English, but that's a code comment, not seed content. AGENTS.md §5 requires English comments. Good.\n\nI should provide a concise final report with verification evidence. The user asked for \"Verification evidence (Strapi startup logs and curl checks...)\" per role, but this specific task explicitly says don't run npm run build and Strapi compilation/seeding will be verified via Docker Compose afterwards — and I'm restricted to editing only seed-data.ts. So I won't run Docker Compose. I'll note that.\n\nLet me give the final summary.",
+          "native": {
+            "reasoningField": "reasoning_content"
+          },
+          "time": {
+            "created": 1795501260119,
+            "completed": 1795501264713
+          }
+        },
+        {
+          "type": "text",
+          "text": "Done. I updated only `backend/src/bootstrap/seed-data.ts`.\n\n## Changes\n\n- Replaced both `TERMS_AND_CONDITIONS_CO` / `TERMS_AND_CONDITIONS_CL` values with the country-distinct simulated Spanish text from spec §3.2, verbatim (8 lines each, preserved as `\\n`-separated lines for `white-space: pre-line`).\n  - CO: Colombia / pesos colombianos (COP) / aseguradora autorizada en Colombia\n  - CL: Chile / pesos chilenos (CLP) / aseguradora autorizada en Chile\n  - Both explicitly state the quote is simulated, creates no policy/coverage/real payment obligation, and processes no real payment instrument.\n- Replaced the obsolete \"US-03 readiness placeholder only\" comment with a concise English JSDoc referencing `specs/US-03-summary-and-payment.md` §3.2.\n- No other lines touched: `documentMaskVisibleEnd: 4` (both countries), all other `countryConfigSeeds` fields, `formFieldSeeds`, and `insurancePlanSeeds` remain unchanged. `seed.ts` create-only idempotency (Checkpoint 3 Q1 Option A) was not modified.\n\n## Verification evidence\n\n`git diff -- backend/src/bootstrap/seed-data.ts` shows exactly one hunk (lines 81–93), confined to the two constants and their comment. `git status --porcelain` shows only `M backend/src/bootstrap/seed-data.ts`.\n\nProgrammatic byte-for-byte comparison of the evaluated string literals against the §3.2 blockquotes:\n\n```\nCO verbatim match (case-sensitive): True\nCL verbatim match (case-sensitive): True\nCO/CL strings distinct:            True\nCO line count: 8 | CL line count: 8\nCO non-blank: True | CL non-blank: True\nCO has Colombia + COP: True\nCL has Chile + CLP:    True\nCO has no CLP/Chile:   True\nCL has no COP/Colombia:True\nNo English tokens in either: True\ndocumentMaskVisibleEnd values: 4, 4\ncountryConfigSeeds country keys: CO, CL\n```\n\nI did not run `npx tsc --noEmit` or any build/startup command per your instruction — this edit changes only string literal contents and a comment, so there is no type-surface change, and Docker Compose verification remains for the follow-up step."
+        }
+      ],
+      "snapshot": {
+        "start": "800f9799d65829ba34bbfa6c4c1537caa2443ddb",
+        "end": "800f9799d65829ba34bbfa6c4c1537caa2443ddb",
+        "files": []
+      },
+      "finish": "stop",
+      "rawFinish": "stop",
+      "cost": 0,
+      "tokens": {
+        "input": 1985,
+        "output": 531,
+        "reasoning": 425,
+        "cache": {
+          "read": 38912,
+          "write": 0
+        }
+      }
+    },
+    {
+      "id": "msg_20c370f87001EwGfM8ZA1Gj3MT",
+      "time": {
+        "created": 1795501264775
+      },
+      "type": "idle",
+      "outcome": "succeeded"
+    }
+  ]
+}

@@ -79,18 +79,28 @@ export interface InsurancePlanSeed {
 }
 
 /**
- * US-03 readiness placeholder only: these terms are never rendered in US-01 and
- * must be replaced with legal-approved text before US-03 sign-off.
+ * Simulated, fictitious Step 3 terms copy from `specs/US-03-summary-and-payment.md` §3.2.
+ * Demo baseline only: the business team replaces this text in the Strapi admin.
  */
 const TERMS_AND_CONDITIONS_CO =
-  'TÉRMINOS Y CONDICIONES — TEXTO DE DEMOSTRACIÓN (PENDIENTE DE APROBACIÓN LEGAL). ' +
-  'Esta cotización es simulada y no constituye una póliza de seguros. ' +
-  'El texto definitivo para Colombia será configurado por el área legal en Strapi antes de la publicación del paso de resumen.';
+  'TÉRMINOS Y CONDICIONES SIMULADOS — COLOMBIA.\n' +
+  'Este documento es ficticio y se utiliza únicamente para demostrar el funcionamiento del cotizador.\n' +
+  'La cotización es simulada: no constituye una póliza de seguros, no genera cobertura alguna y no crea obligaciones de pago reales.\n' +
+  'Los datos del tomador y del vehículo se utilizan solo en tu navegador durante esta sesión y no se envían a ningún servidor para contratar un seguro.\n' +
+  'Los precios y los ajustes mostrados son ilustrativos y no representan una oferta comercial.\n' +
+  'El pago es simulado y no se procesa ningún instrumento de pago real.\n' +
+  'Los precios están expresados en pesos colombianos (COP).\n' +
+  'Para contratar un seguro de auto real debes acudir a una aseguradora autorizada en Colombia y revisar los términos y condiciones vigentes conforme a la regulación local.';
 
 const TERMS_AND_CONDITIONS_CL =
-  'TÉRMINOS Y CONDICIONES — TEXTO DE DEMOSTRACIÓN (PENDIENTE DE APROBACIÓN LEGAL). ' +
-  'Esta cotización es simulada y no constituye una póliza de seguros. ' +
-  'El texto definitivo para Chile será configurado por el área legal en Strapi antes de la publicación del paso de resumen.';
+  'TÉRMINOS Y CONDICIONES SIMULADOS — CHILE.\n' +
+  'Este documento es ficticio y se utiliza únicamente para demostrar el funcionamiento del cotizador.\n' +
+  'La cotización es simulada: no constituye una póliza de seguros, no genera cobertura alguna y no crea obligaciones de pago reales.\n' +
+  'Los datos del tomador y del vehículo se utilizan solo en tu navegador durante esta sesión y no se envían a ningún servidor para contratar un seguro.\n' +
+  'Los precios y los ajustes mostrados son ilustrativos y no representan una oferta comercial.\n' +
+  'El pago es simulado y no se procesa ningún instrumento de pago real.\n' +
+  'Los precios están expresados en pesos chilenos (CLP).\n' +
+  'Para contratar un seguro de auto real debes acudir a una aseguradora autorizada en Chile y revisar los términos y condiciones vigentes conforme a la regulación local.';
 
 export const countryConfigSeeds: readonly CountryConfigSeed[] = [
   {
