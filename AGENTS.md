@@ -29,6 +29,16 @@ Every increment must follow and link this chain:
 - **Antigravity:** Planning, multi-step orchestration, human-in-the-loop checkpoints, and interactive/visual browser verification (accessibility, keyboard-only navigation, mobile/desktop responsiveness).
 - **OpenCode (`opencode` CLI):** Versioned subagent definitions (`.opencode/agents/`), reusable custom skills (`.opencode/skills/`), focused agent execution, and unedited session log exports (`opencode session export` stored in `docs/session-logs/`).
 
+### Subagent Roster & Ownership Boundaries
+
+| Subagent | Role | Allowed Scope | Outputs |
+| --- | --- | --- | --- |
+| `spec-analyst` | Spec & ADR Analyst | `specs/`, `docs/adrs/` (no bash) | `specs/US-XX-*.md`, `docs/adrs/ADR-XXX-*.md` |
+| `strapi-dev` | Strapi Backend Developer | `backend/`, Strapi Docker/env config | Content schemas, idempotent seed, Public role read-only permissions |
+| `angular-dev` | Angular Front-End Developer | `frontend/` production source (no test suites) | Standalone components, signal stores, typed dynamic forms |
+| `tester-dev` | Test Automation Developer | `frontend/src/**/*.spec.ts`, `frontend/e2e/**`, test configs | Unit tests, Playwright E2E tests, execution reports |
+| `code-reviewer` | Independent Code Reviewer | `docs/reviews/` (read-only on app code) | `docs/reviews/US-XX-review.md` with severity-ranked findings |
+
 ---
 
 ## 4. Mandatory Technical Rules
