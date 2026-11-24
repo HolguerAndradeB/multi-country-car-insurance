@@ -89,14 +89,15 @@ export class CatalogueApi {
       }
     }
 
-    mapped.sort((left, right) => left.order - right.order || left.id - right.id);
+    // Deduplicate by documentId keeping the lowest numeric id before final display sorting.
+    mapped.sort((left, right) => left.id - right.id);
     const byDocumentId = new Map<string, InsurancePlan>();
     for (const plan of mapped) {
       const existing = byDocumentId.get(plan.documentId);
       if (existing) {
         if (isDevMode()) {
           console.warn(
-            `[catalogue] duplicate plan documentId "${plan.documentId}"; keeping order ${existing.order} (id ${existing.id}).`,
+            `[catalogue] duplicate plan documentId "${plan.documentId}"; keeping id ${existing.id}.`,
           );
         }
         continue;

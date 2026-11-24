@@ -477,6 +477,39 @@ describe('CatalogueApi (US01-U09, US01-U18, ADR-002)', () => {
     expect(plans[0]).toMatchObject({ id: 20, key: 'duplicate-low' });
   });
 
+  it('US02-U06: keeps the lowest id even when a higher-id duplicate has a lower order', async () => {
+    const result = firstValueFrom(api.getInsurancePlans('CO'));
+    httpMock.expectOne(PLANS_URL_CO).flush(
+      list([
+        planDto({
+          id: 9,
+          documentId: 'dup-diff-order',
+          key: 'duplicate-high-id-low-order',
+          order: 1,
+        }),
+        planDto({
+          id: 4,
+          documentId: 'dup-diff-order',
+          key: 'duplicate-low-id-high-order',
+          order: 2,
+        }),
+        planDto({
+          id: 7,
+          documentId: 'other-doc',
+          key: 'other',
+          order: 1,
+        }),
+      ]),
+    );
+
+    const plans = await result;
+    expect(plans.map((plan) => [plan.key, plan.id, plan.order])).toEqual([
+      ['other', 7, 1],
+      ['duplicate-low-id-high-order', 4, 2],
+    ]);
+    expect(console.warn).toHaveBeenCalledWith(expect.stringContaining('keeping id 4'));
+  });
+
   it('propagates a plans HTTP failure instead of silently emitting an empty list', async () => {
     const result = firstValueFrom(api.getInsurancePlans('CO'));
     httpMock
