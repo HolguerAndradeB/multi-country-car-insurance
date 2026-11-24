@@ -1,6 +1,6 @@
 # ADR-002: Strapi Security and Permissions — Public Role Read-Only Access and Zero Browser Tokens
 
-**Status:** Proposed (Awaiting Checkpoint 2 Human Approval)
+**Status:** Accepted (Approved at Checkpoint 2 on 2026-11-23)
 
 **Date:** 2026-11-23
 
@@ -265,3 +265,8 @@ V4–V6 and V7 are the acceptance-level proof of S1/S2 and should be automated (
 3. **BFF proxy trigger:** agree the condition that would justify revisiting Option C (e.g. introduction of protected content, per-user quotes, or aggregation needs), so the decision is revisited deliberately rather than by accident.
 4. **Rate limiting:** confirm whether Phase 1 adds Strapi/proxy rate limiting on the three public endpoints, or defers it to the hosting layer (recommended: defer, document in `README.md`).
 5. **Admin credentials:** confirm that `docker compose` seeds the admin user via env vars (never committed) and that admin credentials are not printed in logs or session logs in `docs/session-logs/`.
+
+### Checkpoint 2 Resolution (2026-11-23)
+
+- **Zero browser tokens:** Confirmed strictly **no API token in the browser at all** (not even a read-only token). Public role read-only permissions (`find`, `findOne`) on the three public content types are the sole browser access mechanism.
+- **Rate limiting & credentials:** Rate limiting is deferred to the hosting layer (documented in `README.md`). No credentials or tokens are ever committed to Git or logged in session exports.

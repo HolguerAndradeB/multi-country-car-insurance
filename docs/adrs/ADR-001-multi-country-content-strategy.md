@@ -1,6 +1,6 @@
 # ADR-001: Multi-Country Content Strategy — Strapi Country Scoping and Angular Path-Based Country Context
 
-**Status:** Proposed (Awaiting Checkpoint 2 Human Approval)
+**Status:** Accepted (Approved at Checkpoint 2 on 2026-11-23)
 
 **Date:** 2026-11-23
 
@@ -344,3 +344,8 @@ export const COUNTRY_CATALOG: readonly CountryCatalogEntry[] = [
 2. **Route segment casing:** lowercase `/co` / `/cl` (assumed, per URL convention) with case-insensitive guard normalisation — confirm no uppercase `/CO` links are required.
 3. **Third-market readiness:** confirm that adding `PE` may legitimately require a Strapi schema edit + restart (but never an Angular rebuild).
 4. **Query page size:** assume `pagination[pageSize]=100` is sufficient for both field sets and plan lists (no pagination UI in scope). Confirm.
+
+### Checkpoint 2 Resolution (2026-11-23)
+
+- **Default market at `/`:** Approved — `/` automatically redirects to `/co/quote`, with a visible header country switcher to navigate to `/cl/quote`.
+- **Route segment casing & pagination:** Confirmed canonical lowercase `/co` and `/cl` routes and `pagination[pageSize]=100`; adding a future third market may update the Strapi `country` enum without requiring an Angular rebuild.

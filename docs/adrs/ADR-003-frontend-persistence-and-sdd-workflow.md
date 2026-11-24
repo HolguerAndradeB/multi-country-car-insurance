@@ -1,6 +1,6 @@
 # ADR-003: Front-End Persistence Strategy and SDD / Hybrid Tooling Workflow
 
-**Status:** Proposed (Awaiting Checkpoint 2 Human Approval)
+**Status:** Accepted (Approved at Checkpoint 2 on 2026-11-23)
 
 **Date:** 2026-11-23
 
@@ -418,3 +418,8 @@ Requirements/design/tasks triad handled by a dedicated agentic IDE.
 4. **Country switch and the draft:** confirm that switching `CO → CL → CO` should restore the `CO` draft (assumed) rather than discard it.
 5. **Session-log contents:** confirm that exporting unedited sessions is approved given that prompts may quote seed data (strictly fictitious), and that no `.env` values may appear in logs.
 6. **Review gate authority:** confirm that `code-reviewer` findings rated *blocker* must be resolved before Checkpoint 4 sign-off, making the review a real gate rather than advisory.
+
+### Checkpoint 2 Resolution (2026-11-23)
+
+- **Session persistence & country isolation:** Approved country-scoped `sessionStorage` with a 2-hour idle TTL; switching `CO -> CL -> CO` preserves each country's draft independently.
+- **Review gate & session logs:** Confirmed that `code-reviewer` Critical/Major findings block Checkpoint 4 sign-off until resolved, and unedited OpenCode session logs are approved with strictly fictitious data only.
