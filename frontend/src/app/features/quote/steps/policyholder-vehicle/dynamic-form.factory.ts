@@ -72,15 +72,17 @@ export class DynamicFormFactory {
   private validatorsFor(field: FormFieldConfig): ValidatorFn[] {
     const validators: ValidatorFn[] = [];
     const rules = field.validations;
+    const shouldTrim =
+      rules.rule === 'clRut' || rules.transform === 'trim' || rules.transform === 'uppercase';
 
     if (field.required) {
       validators.push(field.type === 'checkbox' ? Validators.requiredTrue : Validators.required);
     }
     if (typeof rules.minLength === 'number') {
-      validators.push(Validators.minLength(rules.minLength));
+      validators.push(minLengthValidator(rules.minLength, shouldTrim));
     }
     if (typeof rules.maxLength === 'number') {
-      validators.push(Validators.maxLength(rules.maxLength));
+      validators.push(maxLengthValidator(rules.maxLength, shouldTrim));
     }
     if (field.type === 'number' && rules.rule !== 'vehicleYear') {
       if (typeof rules.min === 'number') {
@@ -93,7 +95,7 @@ export class DynamicFormFactory {
     if (rules.pattern) {
       const pattern = this.safePattern(rules.pattern, field.key);
       if (pattern) {
-        validators.push(Validators.pattern(pattern));
+        validators.push(trimmedPatternValidator(pattern, shouldTrim));
       }
     }
 
@@ -274,4 +276,53 @@ export function dateBoundsValidator(minDate?: string, maxDate?: string): Validat
 
 function isEmpty(value: FormValue | undefined): boolean {
   return value === null || value === undefined || value === '';
+}
+
+function trimmedString(value: FormValue | undefined): string | null {
+  return typeof value === 'string' ? value.trim() : null;
+}
+
+function minLengthValidator(minLength: number, trim: boolean): ValidatorFn {
+  if (!trim) {
+    return Validators.minLength(minLength);
+  }
+  return (control: AbstractControl): ValidationErrors | null => {
+    const trimmed = trimmedString(control.value);
+    if (trimmed === null || trimmed.length === 0) {
+      return null;
+    }
+    return trimmed.length >= minLength
+      ? null
+      : { minlength: { requiredLength: minLength, actualLength: trimmed.length } };
+  };
+}
+
+function maxLengthValidator(maxLength: number, trim: boolean): ValidatorFn {
+  if (!trim) {
+    return Validators.maxLength(maxLength);
+  }
+  return (control: AbstractControl): ValidationErrors | null => {
+    const trimmed = trimmedString(control.value);
+    if (trimmed === null || trimmed.length === 0) {
+      return null;
+    }
+    return trimmed.length <= maxLength
+      ? null
+      : { maxlength: { requiredLength: maxLength, actualLength: trimmed.length } };
+  };
+}
+
+function trimmedPatternValidator(pattern: RegExp, trim: boolean): ValidatorFn {
+  if (!trim) {
+    return Validators.pattern(pattern);
+  }
+  return (control: AbstractControl): ValidationErrors | null => {
+    const trimmed = trimmedString(control.value);
+    if (trimmed === null || trimmed.length === 0) {
+      return null;
+    }
+    return pattern.test(trimmed)
+      ? null
+      : { pattern: { requiredPattern: pattern.toString(), actualValue: trimmed } };
+  };
 }

@@ -295,7 +295,7 @@ const CHILE_FORM_FIELDS: readonly FormFieldSeed[] = [
       rule: 'clRut',
       transform: 'trim',
     },
-    helpText: 'Ingresa tu RUT con o sin puntos y guion. Ejemplo: 12.345.678-9.',
+    helpText: 'Ingresa tu RUT con o sin puntos y guion. Ejemplo: 12.345.678-5.',
     errorMessage: 'El RUT ingresado no es válido.',
     order: 1,
     country: 'CL',

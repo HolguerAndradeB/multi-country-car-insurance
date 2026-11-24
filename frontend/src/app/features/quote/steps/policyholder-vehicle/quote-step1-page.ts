@@ -21,6 +21,7 @@ import type {
   WizardFormGroup,
 } from '../../../../core/models';
 import { DynamicFieldComponent } from './components/dynamic-field/dynamic-field';
+import { normalizeFieldValue } from './dynamic-form.factory';
 import { StatePanelComponent } from '../../ui/state-panel/state-panel';
 import { WizardStepperComponent } from '../../ui/wizard-stepper/wizard-stepper';
 import { WizardStore } from '../../state/wizard.store';
@@ -91,6 +92,16 @@ export class QuoteStep1PageComponent {
     const form = this.store.form();
     if (!form) {
       return;
+    }
+
+    for (const field of this.store.fields()) {
+      const control = form.controls[field.key];
+      if (control) {
+        const normalized = normalizeFieldValue(field, control.value);
+        if (normalized !== control.value) {
+          control.setValue(normalized);
+        }
+      }
     }
 
     if (form.invalid) {

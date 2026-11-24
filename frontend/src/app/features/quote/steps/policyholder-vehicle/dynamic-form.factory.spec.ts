@@ -266,6 +266,31 @@ describe('DynamicFormFactory', () => {
     control.setValue('Camila');
     expect(control.valid).toBe(true);
   });
+
+  it('validates the seeded CL RUT configuration across dotted, bare, K and padded inputs', () => {
+    const rutField = makeField({
+      key: 'documentNumber',
+      type: 'text',
+      required: true,
+      validations: {
+        minLength: 8,
+        maxLength: 12,
+        pattern: '^[0-9kK.\\-]+$',
+        rule: 'clRut',
+        transform: 'trim',
+      },
+    });
+    const control = factory.createForm([rutField], {}).controls['documentNumber'];
+
+    for (const validRut of ['12.345.678-5', '12345678-5', '10.000.478-K', ' 12.345.678-5 ']) {
+      control.setValue(validRut);
+      expect(control.valid).toBe(true);
+    }
+
+    control.setValue('12.345.678-9');
+    expect(control.valid).toBe(false);
+    expect(control.errors).toEqual({ clRut: true });
+  });
 });
 
 describe('DynamicFieldComponent error message resolution (US01-U19)', () => {

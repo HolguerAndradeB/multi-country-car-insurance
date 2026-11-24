@@ -148,7 +148,7 @@ Orders 1–5 are `policyholder`, 6–8 are `vehicle` (contiguous, per G15). `doc
 
 | `order` | `section` | `key` | `type` | `label` (es-CL) | `required` | `helpText` | `errorMessage` | `validations` | `options` |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | policyholder | `documentNumber` | `text` | RUT | true | Ingresa tu RUT con o sin puntos y guion. Ejemplo: 12.345.678-9. | El RUT ingresado no es válido. | `{"minLength":8,"maxLength":12,"pattern":"^[0-9kK.\\-]+$","rule":"clRut","transform":"trim"}` | — |
+| 1 | policyholder | `documentNumber` | `text` | RUT | true | Ingresa tu RUT con o sin puntos y guion. Ejemplo: 12.345.678-5. | El RUT ingresado no es válido. | `{"minLength":8,"maxLength":12,"pattern":"^[0-9kK.\\-]+$","rule":"clRut","transform":"trim"}` | — |
 | 2 | policyholder | `fullName` | `text` | Nombre completo | true | Escríbelo tal como aparece en tu documento. | Ingresa tu nombre completo (mínimo 3 caracteres). | `{"minLength":3,"maxLength":80,"pattern":"^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ' ]+$","transform":"trim"}` | — |
 | 3 | policyholder | `birthDate` | `date` | Fecha de nacimiento | true | Debes ser mayor de 18 años para cotizar. | Debes ser mayor de 18 años para continuar. | `{"rule":"legalAge","minDate":"1900-01-01"}` | — |
 | 4 | policyholder | `city` | `select` | Ciudad de residencia | true | Selecciona la ciudad donde resides. | Selecciona una ciudad válida. | `{}` | `[{"value":"SCL","label":"Santiago"},{"value":"VAP","label":"Valparaíso"},{"value":"CCP","label":"Concepción"},{"value":"ANT","label":"Antofagasta"},{"value":"LSC","label":"La Serena"}]` |
