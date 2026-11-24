@@ -43,7 +43,7 @@ US-03 consumes — and must not redefine — these existing artifacts:
 | `QuoteClock` | Injected clock boundary from US-02 (`today`, `currentYear`, local calendar date, no UTC conversion). US-03 reuses it for the `YYYYMMDD` part of the quote number (§5.4). |
 | `formatCurrency`, `pickKeys`, `calculateAdjustedPrice` | Existing pure helpers. US-03 reuses `formatCurrency` for the three price lines and never calls `calculateAdjustedPrice` itself (G4). |
 | `CountryContextService` | `country`, `locale`, `currency` signals and `quotePath(step: 'quote' \| 'plans' \| 'summary')` are the only source of route context and navigation paths. |
-| `step2CompleteGuard` | Already protects `/:country/quote/summary`. US-03 keeps it unchanged: invalid Step 1 → `/:country/quote`; Step 1 valid but no active selection → `/:country/quote/plans`. |
+| `step2CompleteGuard` | Already protects `/:country/quote/summary`. US-03 extends it minimally for cold-reload hydration: if `selectedPlan()` is `null` only because `plans()` has not been fetched yet while a persisted `selectedPlanDocumentId` exists in storage, it awaits `loadPlans(country)` before deciding (`US03-E14`); invalid Step 1 still → `/:country/quote`; missing or stale selection still → `/:country/quote/plans`. |
 | `UI_COPY` | Shared neutral-Spanish chrome copy. US-03 **adds keys** for Step 3 (§5.6) but keeps all existing keys byte-identical. Country-specific terms text comes from Strapi, never from `UI_COPY`. |
 | `SummaryPlaceholderPageComponent` | US-02's read-only Step 3 shell. US-03 **replaces it wholesale** with `QuoteStep3SummaryPageComponent`, exactly as US-02 replaced `PlansPlaceholderPageComponent`. |
 
@@ -580,7 +580,7 @@ Routing table (`app.routes.ts`, lazy `loadComponent`): only the summary row chan
 | `':country/quote/summary'` | `canActivate: [countryRouteGuard, step2CompleteGuard]` → **`QuoteStep3SummaryPageComponent`** (replaces the placeholder) |
 | `'**'` | `NotFoundPageComponent` (unchanged) |
 
-`step2CompleteGuard` is **not modified**: invalid/missing Step 1 → `/:country/quote`; Step 1 valid but `selectedPlan() === null` → `/:country/quote/plans`; otherwise allow. This guarantees the summary never renders without data or a plan.
+`step2CompleteGuard` rules: invalid/missing Step 1 → `/:country/quote`; if `selectedPlan()` is `null` while a persisted `selectedPlanDocumentId` exists and the plan catalogue has not loaded yet, await `loadPlans(country)` once so cold reloads onto `/:country/quote/summary` (`US03-E14`) restore cleanly; Step 1 valid but `selectedPlan() === null` after hydration → `/:country/quote/plans`; otherwise allow. This guarantees the summary never renders without data or an active plan.
 
 ```
 QuoteStep3SummaryPage ─reads─▶ WizardStore(summaryStatus, summaryConfig, termsAccepted,

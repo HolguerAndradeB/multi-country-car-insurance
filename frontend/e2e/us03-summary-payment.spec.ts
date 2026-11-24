@@ -858,6 +858,33 @@ test.describe('US-03 Summary and Simulated Payment', () => {
     expect(checkboxBox?.height).toBeGreaterThanOrEqual(44);
     const payBox = await page.getByTestId('pay-button').boundingBox();
     expect(payBox?.height).toBeGreaterThanOrEqual(44);
+    expect(payBox?.width).toBeGreaterThanOrEqual(300);
+    const editBox = await page.getByRole('button', { name: COPY.editData }).boundingBox();
+    const changeBox = await page.getByRole('button', { name: COPY.changePlan }).boundingBox();
+    expect(editBox?.height).toBeGreaterThanOrEqual(44);
+    expect(changeBox?.height).toBeGreaterThanOrEqual(44);
+    const mobileGrid = await page.getByTestId('summary-sections').evaluate((element) => {
+      const style = getComputedStyle(element);
+      return style.gridTemplateColumns.trim().split(/\s+/).length;
+    });
+    expect(mobileGrid).toBe(1);
+    const termsScrollStyle = await page.getByTestId('terms-region').evaluate((element) => {
+      const style = getComputedStyle(element);
+      return { overflowY: style.overflowY, maxHeight: Number.parseFloat(style.maxHeight) };
+    });
+    expect(termsScrollStyle.overflowY).toBe('auto');
+    expect(termsScrollStyle.maxHeight).toBeLessThanOrEqual(330);
+
+    await page.setViewportSize({ width: 768, height: 900 });
+    const tabletGrid = await page.getByTestId('summary-sections').evaluate((element) => {
+      const style = getComputedStyle(element);
+      return {
+        columns: style.gridTemplateColumns.trim().split(/\s+/).length,
+        gap: Number.parseFloat(style.columnGap || style.gap),
+      };
+    });
+    expect(tabletGrid.columns).toBe(2);
+    expect(tabletGrid.gap).toBeGreaterThanOrEqual(15);
 
     await page.setViewportSize({ width: 1280, height: 900 });
     expect(
@@ -869,6 +896,10 @@ test.describe('US-03 Summary and Simulated Payment', () => {
       (element) => (element as HTMLElement).getBoundingClientRect().width,
     );
     expect(pageWidth).toBeLessThanOrEqual(1120);
+    const desktopGridGap = await page.getByTestId('summary-sections').evaluate((element) =>
+      Number.parseFloat(getComputedStyle(element).columnGap || getComputedStyle(element).gap),
+    );
+    expect(desktopGridGap).toBeGreaterThanOrEqual(23);
     const priceOverflow = await page.locator('.payment__price--final').evaluate(
       (element) => getComputedStyle(element).textOverflow,
     );
@@ -878,6 +909,8 @@ test.describe('US-03 Summary and Simulated Payment', () => {
     await page.evaluate(() => Reflect.set(globalThis, '__WIZARD_SIMULATE_PAYMENT_FAILURE__', false));
     await pay(page);
     await expectConfirmation(page);
+    const newQuoteBox = await page.getByRole('button', { name: COPY.newQuote }).boundingBox();
+    expect(newQuoteBox?.height).toBeGreaterThanOrEqual(44);
     expect(apiRequests).toHaveLength(beforePay);
     for (const captured of apiRequests) {
       expect(captured.method).toBe('GET');

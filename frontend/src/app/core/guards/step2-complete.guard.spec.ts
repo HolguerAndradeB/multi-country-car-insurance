@@ -12,7 +12,7 @@ import {
 import { signal } from '@angular/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { InsurancePlan, WizardFormGroup } from '../models';
+import type { CatalogueStatus, InsurancePlan, WizardFormGroup } from '../models';
 import { WizardStore } from '../../features/quote/wizard.store';
 import { step2CompleteGuard } from './step2-complete.guard';
 
@@ -20,7 +20,10 @@ interface StoreStub {
   readonly isLoadedFor: ReturnType<typeof vi.fn>;
   readonly form: ReturnType<typeof signal<WizardFormGroup | null>>;
   readonly selectedPlan: ReturnType<typeof signal<InsurancePlan | null>>;
+  readonly selectedPlanDocumentId: ReturnType<typeof signal<string | null>>;
+  readonly plansStatus: ReturnType<typeof signal<CatalogueStatus>>;
   readonly load: ReturnType<typeof vi.fn>;
+  readonly loadPlans: ReturnType<typeof vi.fn>;
 }
 
 function routeWithCountry(country: string): ActivatedRouteSnapshot {
@@ -54,7 +57,10 @@ describe('step2CompleteGuard (US02-U11, US02-E15)', () => {
       isLoadedFor: vi.fn(() => true),
       form: signal({ valid: true } as unknown as WizardFormGroup),
       selectedPlan: signal<InsurancePlan | null>(SELECTED),
+      selectedPlanDocumentId: signal<string | null>(SELECTED.documentId),
+      plansStatus: signal<CatalogueStatus>('ready'),
       load: vi.fn(async () => undefined),
+      loadPlans: vi.fn(async () => undefined),
     };
 
     await TestBed.configureTestingModule({
@@ -107,5 +113,31 @@ describe('step2CompleteGuard (US02-U11, US02-E15)', () => {
     store.isLoadedFor.mockReturnValue(true);
 
     expect(await redirectUrl(activate('CO'))).toBe('/co/quote/plans');
+  });
+
+  it('hydrates plans on cold reload when a persisted selectedPlanDocumentId exists and resolves', async () => {
+    store.selectedPlan.set(null);
+    store.selectedPlanDocumentId.set(SELECTED.documentId);
+    store.plansStatus.set('idle');
+    store.loadPlans.mockImplementation(async () => {
+      store.plansStatus.set('ready');
+      store.selectedPlan.set(SELECTED);
+    });
+
+    await expect(activate('CO')).resolves.toBe(true);
+    expect(store.loadPlans).toHaveBeenCalledWith('CO');
+  });
+
+  it('redirects to plans on cold reload when the persisted selectedPlanDocumentId is no longer active', async () => {
+    store.selectedPlan.set(null);
+    store.selectedPlanDocumentId.set('stale-plan-id');
+    store.plansStatus.set('idle');
+    store.loadPlans.mockImplementation(async () => {
+      store.plansStatus.set('ready');
+      store.selectedPlan.set(null);
+    });
+
+    expect(await redirectUrl(activate('CO'))).toBe('/co/quote/plans');
+    expect(store.loadPlans).toHaveBeenCalledWith('CO');
   });
 });
