@@ -197,19 +197,21 @@ describe('CatalogueApi (US01-U09, US01-U18, ADR-002)', () => {
     expect(fields.map((field) => field.id)).toEqual([1, 3, 2, 4]);
   });
 
-  it('de-duplicates a repeated key keeping the lowest id', async () => {
+  it('de-duplicates a repeated key keeping the lowest order, then lowest id (US01-U18)', async () => {
     const result = firstValueFrom(api.getFormFields('CO'));
     httpMock.expectOne(FIELDS_URL_CO).flush(
       list([
-        fieldDto({ id: 8, documentId: 'd8', key: 'city', order: 1 }),
         fieldDto({ id: 2, documentId: 'd2', key: 'city', order: 4 }),
+        fieldDto({ id: 8, documentId: 'd8', key: 'city', order: 1 }),
+        fieldDto({ id: 9, documentId: 'd9', key: 'phone', order: 2 }),
+        fieldDto({ id: 3, documentId: 'd3', key: 'phone', order: 2 }),
       ]),
     );
 
     const fields = await result;
-    expect(fields).toHaveLength(1);
-    expect(fields[0].id).toBe(2);
-    expect(fields[0].order).toBe(4);
+    expect(fields).toHaveLength(2);
+    expect(fields[0]).toMatchObject({ key: 'city', id: 8, order: 1 });
+    expect(fields[1]).toMatchObject({ key: 'phone', id: 3, order: 2 });
     expect(console.warn).toHaveBeenCalledWith(expect.stringContaining('duplicate field key'));
   });
 

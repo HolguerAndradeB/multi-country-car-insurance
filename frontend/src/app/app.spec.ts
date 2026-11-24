@@ -69,4 +69,10 @@ describe('App shell', () => {
     expect(fixture.debugElement.query((node) => node.injector.get(RouterOutlet, null) !== null)).toBeTruthy();
     expect(TestBed.inject(API_BASE_URL)).toBe('http://strapi.test');
   });
+
+  it('defaults API_BASE_URL to the public Strapi origin with no credentials', () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({});
+    expect(TestBed.inject(API_BASE_URL)).toBe('http://localhost:1337');
+  });
 });

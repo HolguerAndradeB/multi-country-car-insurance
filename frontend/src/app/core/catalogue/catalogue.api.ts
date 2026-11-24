@@ -76,13 +76,18 @@ export class CatalogueApi {
       }
     }
 
-    // De-duplicate by key keeping the lowest id, then apply the rendering order.
-    mapped.sort((left, right) => left.key.localeCompare(right.key) || left.id - right.id);
+    // De-duplicate by key keeping the lowest order (tie-break by lowest id), then apply rendering order.
+    mapped.sort(
+      (left, right) =>
+        left.key.localeCompare(right.key) || left.order - right.order || left.id - right.id,
+    );
     const byKey = new Map<string, FormFieldConfig>();
     for (const field of mapped) {
       const existing = byKey.get(field.key);
       if (existing && existing.id !== field.id && isDevMode()) {
-        console.warn(`[catalogue] duplicate field key "${field.key}"; keeping id ${existing.id}.`);
+        console.warn(
+          `[catalogue] duplicate field key "${field.key}"; keeping order ${existing.order} (id ${existing.id}).`,
+        );
       }
       if (!existing) {
         byKey.set(field.key, field);
