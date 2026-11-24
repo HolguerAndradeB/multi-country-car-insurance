@@ -10,15 +10,23 @@ import type {
   CountryCode,
   CountryConfig,
   FormFieldConfig,
+  FormValue,
   InsurancePlan,
   PersistedWizardStateV1,
+  QuoteConfirmation,
+  SimulatedPaymentRequest,
+  SimulatedPaymentResult,
 } from '../../core/models';
+import {
+  SIMULATED_PAYMENT_FAILURE_HOOK,
+  SimulatedPaymentService,
+} from '../../core/payment/simulated-payment.service';
 import { STORAGE_PORT, type StoragePort } from '../../core/persistence/storage.port';
 import {
   wizardStorageKey,
   WizardPersistenceService,
 } from '../../core/persistence/wizard-persistence.service';
-import type { QuoteClock } from '../../core/pricing/quote-clock';
+import { QuoteClock } from '../../core/pricing/quote-clock';
 import { WizardStore } from './wizard.store';
 
 class MemoryStorage implements StoragePort {
@@ -476,5 +484,431 @@ describe('WizardStore (US01-U10, US01-U11, US01-U12, US01-U17)', () => {
     } finally {
       clearSpy.mockRestore();
     }
+  });
+});
+
+describe('WizardStore — US-03 summary and simulated payment', () => {
+  const CO_TERMS = 'TÉRMINOS Y CONDICIONES SIMULADOS — COLOMBIA.';
+  const CL_TERMS = 'TÉRMINOS Y CONDICIONES SIMULADOS — CHILE.';
+  const CLOCK: QuoteClock = { today: new Date(2026, 10, 24), currentYear: 2026 };
+
+  const CONFIGS: Readonly<Record<CountryCode, CountryConfig>> = {
+    CO: {
+      id: 1,
+      documentId: 'cfgcol0000000000000001',
+      country: 'CO',
+      countryName: 'Colombia',
+      currency: 'COP',
+      localeCode: 'es-CO',
+      termsAndConditions: CO_TERMS,
+      documentMaskVisibleEnd: 4,
+    },
+    CL: {
+      id: 2,
+      documentId: 'cfgcll0000000000000001',
+      country: 'CL',
+      countryName: 'Chile',
+      currency: 'CLP',
+      localeCode: 'es-CL',
+      termsAndConditions: CL_TERMS,
+      documentMaskVisibleEnd: 4,
+    },
+  };
+
+  const STEP1: Readonly<Record<CountryCode, Readonly<Record<string, FormValue>>>> = {
+    CO: {
+      documentNumber: '123456789',
+      fullName: 'Ana Ejemplo',
+      birthDate: '1990-06-15',
+      licensePlate: 'ABC123',
+      vehicleYear: 2021,
+    },
+    CL: {
+      documentNumber: '12345678-K',
+      fullName: 'Carlos Ejemplo',
+      birthDate: '1990-06-15',
+      licensePlate: 'ABCD12',
+      vehicleYear: 2021,
+    },
+  };
+
+  function planId(country: CountryCode): string {
+    return country === 'CO' ? 'planco00000000000000002' : 'plancl00000000000000002';
+  }
+
+  function summaryFields(country: CountryCode): readonly FormFieldConfig[] {
+    return [
+      makeField({
+        id: 1,
+        key: 'documentNumber',
+        type: 'text',
+        label: country === 'CO' ? 'Número de documento' : 'RUT',
+        required: true,
+        order: 1,
+        country,
+      }),
+      makeField({
+        id: 2,
+        key: 'fullName',
+        type: 'text',
+        label: 'Nombre completo',
+        required: true,
+        order: 2,
+        country,
+      }),
+      makeField({
+        id: 3,
+        key: 'birthDate',
+        type: 'date',
+        label: 'Fecha de nacimiento',
+        required: true,
+        order: 3,
+        country,
+      }),
+      makeField({
+        id: 4,
+        key: 'licensePlate',
+        type: 'text',
+        label: country === 'CO' ? 'Placa' : 'Patente',
+        required: true,
+        order: 4,
+        country,
+        section: 'vehicle',
+      }),
+      makeField({
+        id: 5,
+        key: 'vehicleYear',
+        type: 'number',
+        label: 'Año del vehículo',
+        required: true,
+        order: 5,
+        country,
+        section: 'vehicle',
+      }),
+    ];
+  }
+
+  let store: WizardStore;
+  let storage: MemoryStorage;
+  let fields$: Observable<readonly FormFieldConfig[]>;
+  let config$: Observable<CountryConfig | null>;
+  let plans$: Observable<readonly InsurancePlan[]>;
+  let api: {
+    getFormFields: ReturnType<typeof vi.fn>;
+    getCountryConfig: ReturnType<typeof vi.fn>;
+    getInsurancePlans: ReturnType<typeof vi.fn>;
+  };
+  let payment: { pay: ReturnType<typeof vi.fn> };
+  let failureHook: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    storage = new MemoryStorage();
+    fields$ = of([]);
+    config$ = of(null);
+    plans$ = of([]);
+    api = {
+      getFormFields: vi.fn((_country: CountryCode) => fields$),
+      getCountryConfig: vi.fn((_country: CountryCode) => config$),
+      getInsurancePlans: vi.fn((_country: CountryCode) => plans$),
+    };
+    payment = {
+      pay: vi.fn(
+        (_request: SimulatedPaymentRequest): Promise<SimulatedPaymentResult> =>
+          Promise.resolve({ ok: true }),
+      ),
+    };
+    failureHook = vi.fn(() => false);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    TestBed.resetTestingModule();
+    Reflect.deleteProperty(globalThis, '__WIZARD_SIMULATE_PAYMENT_FAILURE__');
+  });
+
+  async function prepare(country: CountryCode): Promise<WizardStore> {
+    const draft: PersistedWizardStateV1 = {
+      schemaVersion: 1,
+      country,
+      savedAt: new Date().toISOString(),
+      step: 'summary',
+      step1: { ...STEP1[country] },
+      selectedPlanDocumentId: planId(country),
+    };
+    storage.values.set(wizardStorageKey(country), JSON.stringify(draft));
+    fields$ = of(summaryFields(country));
+    config$ = of(CONFIGS[country]);
+    plans$ = of([
+      makePlan({
+        documentId: planId(country),
+        country,
+        name: 'Plan Estándar',
+        basePrice: country === 'CO' ? 620000 : 490000,
+        currency: country === 'CO' ? 'COP' : 'CLP',
+      }),
+    ]);
+
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      providers: [
+        provideLocationMocks(),
+        provideRouter([]),
+        { provide: CatalogueApi, useValue: api },
+        { provide: STORAGE_PORT, useValue: storage },
+        { provide: QuoteClock, useValue: CLOCK },
+        { provide: SimulatedPaymentService, useValue: payment },
+        { provide: SIMULATED_PAYMENT_FAILURE_HOOK, useValue: failureHook },
+      ],
+    }).compileComponents();
+
+    const readyStore = TestBed.inject(WizardStore);
+    readyStore.captureClock(CLOCK);
+    await readyStore.load(country);
+    await readyStore.loadPlans(country);
+    expect(readyStore.selectedPlanDocumentId()).toBe(planId(country));
+    await readyStore.loadSummaryContext(country);
+    expect(readyStore.summaryStatus()).toBe('ready');
+    return readyStore;
+  }
+
+  async function settlePayment(): Promise<void> {
+    for (let tick = 0; tick < 8; tick += 1) {
+      await Promise.resolve();
+    }
+  }
+
+  it('US03-U06: reloads the live config on every entry and keeps CO/CL terms distinct', async () => {
+    const coStore = await prepare('CO');
+    expect(coStore.summaryConfig()?.termsAndConditions).toBe(CO_TERMS);
+    const coCalls = api.getCountryConfig.mock.calls.filter((call) => call[0] === 'CO').length;
+    expect(coCalls).toBeGreaterThanOrEqual(2);
+
+    config$ = of({ ...CONFIGS['CO'], termsAndConditions: 'TÉRMINOS EDITADOS EN STRAPI.' });
+    await coStore.retrySummary('CO');
+    expect(api.getCountryConfig).toHaveBeenCalledWith('CO');
+    expect(
+      api.getCountryConfig.mock.calls.filter((call) => call[0] === 'CO').length,
+    ).toBe(coCalls + 1);
+    expect(coStore.summaryConfig()?.termsAndConditions).toBe('TÉRMINOS EDITADOS EN STRAPI.');
+
+    const clStore = await prepare('CL');
+    expect(clStore.summaryConfig()?.termsAndConditions).toBe(CL_TERMS);
+    expect(clStore.summaryConfig()?.documentId).toBe('cfgcll0000000000000001');
+    expect(api.getCountryConfig).toHaveBeenCalledWith('CL');
+    expect(CL_TERMS).not.toBe(CO_TERMS);
+  });
+
+  it('US03-U07: blank and null configs block payment with empty-terms without clearing storage', async () => {
+    const readyStore = await prepare('CO');
+    const saved = storage.values.get(wizardStorageKey('CO'));
+    readyStore.setTermsAccepted(true);
+
+    config$ = of({ ...CONFIGS['CO'], termsAndConditions: '   ' });
+    await readyStore.retrySummary('CO');
+
+    expect(readyStore.summaryStatus()).toBe('empty-terms');
+    expect(readyStore.summaryConfig()?.termsAndConditions).toBe('   ');
+    expect(readyStore.termsAvailable()).toBe(false);
+    expect(readyStore.termsAccepted()).toBe(false);
+    expect(readyStore.canPay()).toBe(false);
+    expect(readyStore.paymentStatus()).toBe('idle');
+    expect(storage.values.get(wizardStorageKey('CO'))).toBe(saved);
+
+    config$ = of(null);
+    await readyStore.retrySummary('CO');
+    expect(readyStore.summaryStatus()).toBe('empty-terms');
+    expect(readyStore.summaryConfig()).toBeNull();
+    expect(readyStore.canPay()).toBe(false);
+  });
+
+  it('US03-U08: canPay gates on ready config and accepted terms', async () => {
+    const readyStore = await prepare('CO');
+
+    expect(readyStore.summaryStatus()).toBe('ready');
+    expect(readyStore.termsAvailable()).toBe(true);
+    expect(readyStore.termsAccepted()).toBe(false);
+    expect(readyStore.canPay()).toBe(false);
+
+    readyStore.setTermsAccepted(true);
+    expect(readyStore.canPay()).toBe(true);
+
+    readyStore.submitPayment();
+    expect(readyStore.paymentStatus()).toBe('processing');
+    expect(readyStore.canPay()).toBe(false);
+  });
+
+  it('US03-U09: the double-submit lock is set before the asynchronous payment starts', async () => {
+    const paymentGate: { resolve: ((result: SimulatedPaymentResult) => void) | null } = {
+      resolve: null,
+    };
+    payment.pay.mockImplementation(
+      () =>
+        new Promise<SimulatedPaymentResult>((resolve) => {
+          paymentGate.resolve = resolve;
+        }),
+    );
+    const readyStore = await prepare('CO');
+    readyStore.setTermsAccepted(true);
+
+    readyStore.submitPayment();
+    expect(readyStore.paymentStatus()).toBe('processing');
+    readyStore.submitPayment();
+    readyStore.submitPayment();
+
+    expect(payment.pay).toHaveBeenCalledTimes(1);
+    if (paymentGate.resolve === null) {
+      throw new Error('The payment boundary must have been called before the lock is tested.');
+    }
+    paymentGate.resolve({ ok: true });
+    await settlePayment();
+
+    expect(readyStore.paymentStatus()).toBe('confirmed');
+    expect(payment.pay).toHaveBeenCalledTimes(1);
+  });
+
+  it('US03-U10: submits only typed display data and freezes no card or token fields', async () => {
+    const readyStore = await prepare('CO');
+    readyStore.setTermsAccepted(true);
+
+    readyStore.submitPayment();
+    await settlePayment();
+
+    expect(payment.pay).toHaveBeenCalledTimes(1);
+    const request = payment.pay.mock.calls[0]?.[0] as SimulatedPaymentRequest;
+    expect(Object.keys(request).sort()).toEqual([
+      'country',
+      'locale',
+      'planDocumentId',
+      'shouldFail',
+      'termsDocumentId',
+    ]);
+    expect(request).toEqual({
+      country: 'CO',
+      locale: 'es-CO',
+      planDocumentId: 'planco00000000000000002',
+      termsDocumentId: 'cfgcol0000000000000001',
+      shouldFail: false,
+    });
+    expect(JSON.stringify(request)).not.toMatch(
+      /card|cvv|expiry|expiration|billing|address|token|gateway/i,
+    );
+    expect(readyStore.paymentStatus()).toBe('confirmed');
+  });
+
+  it('US03-U11: rejection keeps data, terms and storage, and retry reuses the loaded context', async () => {
+    const readyStore = await prepare('CO');
+    readyStore.setTermsAccepted(true);
+    const beforeStep1 = { ...readyStore.step1Values() };
+    const beforePlan = readyStore.selectedPlanDocumentId();
+    const beforeStorage = storage.values.get(wizardStorageKey('CO'));
+
+    payment.pay.mockResolvedValueOnce({ ok: false, code: 'SIMULATED_REJECTION' });
+    readyStore.submitPayment();
+    await settlePayment();
+
+    expect(readyStore.paymentStatus()).toBe('rejected');
+    expect(readyStore.confirmation()).toBeNull();
+    expect(readyStore.termsAccepted()).toBe(true);
+    expect(readyStore.canPay()).toBe(true);
+    expect(readyStore.step1Values()).toEqual(beforeStep1);
+    expect(readyStore.selectedPlanDocumentId()).toBe(beforePlan);
+    expect(storage.values.get(wizardStorageKey('CO'))).toBe(beforeStorage);
+
+    payment.pay.mockResolvedValueOnce({ ok: true });
+    readyStore.submitPayment();
+    await settlePayment();
+
+    expect(readyStore.paymentStatus()).toBe('confirmed');
+    expect(payment.pay).toHaveBeenCalledTimes(2);
+    expect(readyStore.termsAccepted()).toBe(true);
+    expect(storage.values.get(wizardStorageKey('CO'))).toBe(beforeStorage);
+  });
+
+  it('US03-U11: a true failure hook is passed to the payment boundary', async () => {
+    failureHook.mockReturnValue(true);
+    const readyStore = await prepare('CO');
+    readyStore.setTermsAccepted(true);
+
+    readyStore.submitPayment();
+    await settlePayment();
+
+    const request = payment.pay.mock.calls[0]?.[0] as SimulatedPaymentRequest;
+    expect(request.shouldFail).toBe(true);
+    expect(failureHook).toHaveBeenCalled();
+  });
+
+  it('US03-U12/U13: success builds a deterministic local-date quote number and a frozen snapshot', async () => {
+    const readyStore = await prepare('CL');
+    readyStore.setTermsAccepted(true);
+
+    readyStore.submitPayment();
+    await settlePayment();
+
+    const confirmation = readyStore.confirmation();
+    expect(confirmation).not.toBeNull();
+    expect(confirmation?.quoteNumber).toMatch(/^COT-CL-20261124-[0-9A-Z]{6}$/);
+    expect(confirmation?.country).toBe('CL');
+    expect(confirmation?.locale).toBe('es-CL');
+    expect(confirmation?.currency).toBe('CLP');
+    expect(confirmation?.issuedAt).toBe(CLOCK.today.toISOString());
+    expect(confirmation?.policyholder.find((row) => row.key === 'documentNumber')?.value).toBe(
+      '••••••78-K',
+    );
+    expect(confirmation?.finalPrice).toBeGreaterThan(0);
+    expect(Object.isFrozen(confirmation)).toBe(true);
+    expect(Object.isFrozen(confirmation?.policyholder)).toBe(true);
+    expect(Object.isFrozen(confirmation?.vehicle)).toBe(true);
+    expect(Object.isFrozen(confirmation?.policyholder[0])).toBe(true);
+    expect(
+      Reflect.set(confirmation as QuoteConfirmation, 'quoteNumber', 'COT-HACKED-000000'),
+    ).toBe(false);
+  });
+
+  it('US03-U14: newQuote delegates to reset, clears the country key and all Step 3 signals', async () => {
+    const readyStore = await prepare('CO');
+    const clearSpy = vi.spyOn(WizardPersistenceService.prototype, 'clear');
+    readyStore.setTermsAccepted(true);
+    readyStore.submitPayment();
+    await settlePayment();
+
+    expect(readyStore.paymentStatus()).toBe('confirmed');
+    expect(clearSpy).not.toHaveBeenCalled();
+
+    readyStore.newQuote('CO');
+
+    expect(clearSpy).toHaveBeenCalledTimes(1);
+    expect(clearSpy).toHaveBeenCalledWith('CO');
+    expect(readyStore.summaryStatus()).toBe('idle');
+    expect(readyStore.summaryConfig()).toBeNull();
+    expect(readyStore.termsAccepted()).toBe(false);
+    expect(readyStore.paymentStatus()).toBe('idle');
+    expect(readyStore.confirmation()).toBeNull();
+    expect(readyStore.step1Values()).toEqual({});
+    expect(readyStore.selectedPlanDocumentId()).toBeNull();
+    expect(readyStore.form()).toBeNull();
+    expect(storage.values.has(wizardStorageKey('CO'))).toBe(false);
+    clearSpy.mockRestore();
+  });
+
+  it('US03-U15: summary re-entry after edit-style navigation preserves values, plan and storage', async () => {
+    const readyStore = await prepare('CO');
+    const clearSpy = vi.spyOn(WizardPersistenceService.prototype, 'clear');
+    const beforeStep1 = { ...readyStore.step1Values() };
+    const beforePlan = readyStore.selectedPlanDocumentId();
+    const beforeStorage = storage.values.get(wizardStorageKey('CO'));
+
+    readyStore.setTermsAccepted(true);
+    await readyStore.loadSummaryContext('CO');
+
+    expect(readyStore.summaryStatus()).toBe('ready');
+    expect(readyStore.termsAccepted()).toBe(false);
+    expect(readyStore.step1Values()).toEqual(beforeStep1);
+    expect(readyStore.selectedPlanDocumentId()).toBe(beforePlan);
+    expect(readyStore.step1Values()['documentNumber']).toBe('123456789');
+    expect(readyStore.summarySections()[0]?.rows[0]?.value).toBe('•••••6789');
+    expect(storage.values.get(wizardStorageKey('CO'))).toBe(beforeStorage);
+    expect(clearSpy).not.toHaveBeenCalled();
+    clearSpy.mockRestore();
   });
 });

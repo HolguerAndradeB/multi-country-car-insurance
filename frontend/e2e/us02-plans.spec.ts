@@ -336,7 +336,7 @@ test.describe('US-02 Plan List and Simulated Pricing', () => {
     await expect(page.locator('input[type="radio"]')).toHaveCount(3);
   });
 
-  test('US02-E04/E14: mouse selection enables Continuar and opens the read-only summary placeholder', async ({
+  test('US02-E04/E14: mouse selection enables Continuar and opens the real Step 3 summary', async ({
     page,
   }) => {
     await completeStep1(page, 'CO');
@@ -349,16 +349,18 @@ test.describe('US-02 Plan List and Simulated Pricing', () => {
 
     await page.getByRole('button', { name: 'Continuar' }).click();
     await expect(page).toHaveURL(/\/co\/quote\/summary$/);
-    await expect(page.getByTestId('summary-placeholder')).toBeVisible();
-    await expect(page.getByTestId('summary-placeholder')).toHaveText('Resumen de tu cotización');
+    await expect(page.getByTestId('summary-page')).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Resumen de tu cotización' })).toBeVisible();
     await expect(page.locator('[aria-current="step"]')).toContainText('Resumen');
+    await expect(page.getByTestId('summary-sections')).toBeVisible();
 
-    await expect(page.getByRole('checkbox')).toHaveCount(0);
-    await expect(page.getByRole('button', { name: /pagar|pay/i })).toHaveCount(0);
     await expect(page.locator('input[autocomplete^="cc-"]')).toHaveCount(0);
-    await expect(page.getByText(/n[úu]mero de cotizaci[óo]n|quote number/i)).toHaveCount(0);
+    const bodyText = await page.locator('body').innerText();
+    expect(bodyText).not.toMatch(
+      /n[úu]mero de tarjeta|tarjeta de cr[ée]dito|cvv|fecha de expiraci[óo]n|direcci[óo]n de facturaci[óo]n|paypal|stripe/i,
+    );
 
-    await page.getByRole('button', { name: 'Volver a planes' }).click();
+    await page.getByRole('button', { name: 'Cambiar plan' }).click();
     await expect(page).toHaveURL(/\/co\/quote\/plans$/);
     await expect(card(page, 'Plan Básico').locator('input[type="radio"]')).toBeChecked();
   });
@@ -565,7 +567,7 @@ test.describe('US-02 Plan List and Simulated Pricing', () => {
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(/\/co\/quote\/summary$/);
 
-    await page.getByRole('button', { name: 'Volver a planes' }).focus();
+    await page.getByRole('button', { name: 'Cambiar plan' }).focus();
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(/\/co\/quote\/plans$/);
   });
