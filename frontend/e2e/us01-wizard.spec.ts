@@ -112,15 +112,20 @@ test.describe('US-01 Multi-Country Dynamic Form Wizard', () => {
     await expect(page.locator('#fullName')).toHaveValue('Camila Rodríguez');
     await expect(page.locator('#licensePlate')).toHaveValue('XYZ987');
 
-    // Submit via keyboard Enter on Continuar -> Step 2 placeholder -> reload -> Back keeps values
+    // Submit via keyboard Enter on Continuar -> real Step 2 plan list -> reload -> Back keeps values
     const nextBtn = page.getByRole('button', { name: 'Continuar' });
     await nextBtn.focus();
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(/\/co\/quote\/plans$/);
-    await expect(page.getByTestId('plans-placeholder')).toBeVisible();
+    await expect(page.getByTestId('plans-page')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Planes', level: 1 })).toBeVisible();
+    await expect(page.locator('fieldset')).toContainText('Selecciona tu plan');
+    await expect(page.locator('app-plan-card').first()).toBeVisible();
 
     await page.reload();
-    await expect(page.getByTestId('plans-placeholder')).toBeVisible();
+    await expect(page.getByTestId('plans-page')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Planes', level: 1 })).toBeVisible();
+    await expect(page.locator('app-plan-card').first()).toBeVisible();
 
     const backBtn = page.getByRole('button', { name: 'Volver a mis datos' });
     await backBtn.focus();

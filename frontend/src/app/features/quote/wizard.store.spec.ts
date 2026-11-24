@@ -10,10 +10,15 @@ import type {
   CountryCode,
   CountryConfig,
   FormFieldConfig,
+  InsurancePlan,
   PersistedWizardStateV1,
 } from '../../core/models';
 import { STORAGE_PORT, type StoragePort } from '../../core/persistence/storage.port';
-import { wizardStorageKey } from '../../core/persistence/wizard-persistence.service';
+import {
+  wizardStorageKey,
+  WizardPersistenceService,
+} from '../../core/persistence/wizard-persistence.service';
+import type { QuoteClock } from '../../core/pricing/quote-clock';
 import { WizardStore } from './wizard.store';
 
 class MemoryStorage implements StoragePort {
@@ -76,6 +81,39 @@ function makeState(step1: PersistedWizardStateV1['step1']): PersistedWizardState
 interface CatalogueStub {
   getFormFields: (country: CountryCode) => Observable<readonly FormFieldConfig[]>;
   getCountryConfig: (country: CountryCode) => Observable<CountryConfig | null>;
+  getInsurancePlans: (country: CountryCode) => Observable<readonly InsurancePlan[]>;
+}
+
+function makePlan(overrides: Partial<InsurancePlan> = {}): InsurancePlan {
+  return {
+    id: overrides.id ?? 1,
+    documentId: overrides.documentId ?? 'planco-estandar',
+    key: overrides.key ?? 'estandar',
+    name: overrides.name ?? 'Plan Estándar',
+    shortDescription: overrides.shortDescription ?? 'Descripción ficticia de demostración.',
+    basePrice: overrides.basePrice ?? 620000,
+    currency: overrides.currency ?? 'COP',
+    coverages: overrides.coverages ?? [
+      { name: 'Asistencia vial', limit: 2000000, deductible: null },
+    ],
+    benefits: overrides.benefits ?? ['Asistencia vial 24 horas'],
+    order: overrides.order ?? 2,
+    recommended: overrides.recommended ?? true,
+    country: overrides.country ?? 'CO',
+  };
+}
+
+const FIXED_CLOCK: QuoteClock = {
+  today: new Date(2026, 10, 23),
+  currentYear: 2026,
+};
+
+function pricingFields(): readonly FormFieldConfig[] {
+  return [
+    makeField({ key: 'fullName', type: 'text', order: 1 }),
+    makeField({ key: 'vehicleYear', type: 'number', order: 2 }),
+    makeField({ key: 'birthDate', type: 'date', order: 3 }),
+  ];
 }
 
 describe('WizardStore (US01-U10, US01-U11, US01-U12, US01-U17)', () => {
@@ -84,15 +122,18 @@ describe('WizardStore (US01-U10, US01-U11, US01-U12, US01-U17)', () => {
   let api: CatalogueStub;
   let fields$: Observable<readonly FormFieldConfig[]>;
   let config$: Observable<CountryConfig | null>;
+  let plans$: Observable<readonly InsurancePlan[]>;
 
   beforeEach(async () => {
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     storage = new MemoryStorage();
     fields$ = of([]);
     config$ = of(null);
+    plans$ = of([]);
     api = {
       getFormFields: vi.fn((_country: CountryCode) => fields$),
       getCountryConfig: vi.fn((_country: CountryCode) => config$),
+      getInsurancePlans: vi.fn((_country: CountryCode) => plans$),
     };
 
     await TestBed.configureTestingModule({
@@ -307,5 +348,133 @@ describe('WizardStore (US01-U10, US01-U11, US01-U12, US01-U17)', () => {
     expect(store.fields()).toEqual([]);
     expect(store.isLoadedFor('CO')).toBe(false);
     expect(storage.values.has(wizardStorageKey('CO'))).toBe(false);
+  });
+
+  it('US02-U07: an empty active catalogue maps to empty (never error)', async () => {
+    fields$ = of(pricingFields());
+    config$ = of(CONFIG);
+    plans$ = of([]);
+    await store.load('CO');
+
+    await store.loadPlans('CO');
+
+    expect(store.plans()).toEqual([]);
+    expect(store.plansStatus()).toBe('empty');
+    expect(store.plansError()).toBeNull();
+    expect(store.selectedPlan()).toBeNull();
+    expect(store.canAdvance()).toBe(false);
+  });
+
+  it('US02-U08: selecting a plan persists the documentId and resolves selectedPlan()', async () => {
+    fields$ = of(pricingFields());
+    config$ = of(CONFIG);
+    plans$ = of([makePlan()]);
+    await store.load('CO');
+    await store.loadPlans('CO');
+
+    store.selectPlan('planco-estandar');
+
+    expect(store.selectedPlanDocumentId()).toBe('planco-estandar');
+    expect(store.selectedPlan()).toMatchObject({ documentId: 'planco-estandar', basePrice: 620000 });
+    expect(store.canAdvance()).toBe(true);
+    expect(store.invalidSelectionNotice()).toBe(false);
+
+    const saved = JSON.parse(storage.values.get(wizardStorageKey('CO')) ?? '') as PersistedWizardStateV1;
+    expect(saved.selectedPlanDocumentId).toBe('planco-estandar');
+    expect(saved.step).toBe('plans');
+    expect(saved.schemaVersion).toBe(1);
+  });
+
+  it('US02-U09: a stale stored plan is cleared after a successful fetch without touching step1/savedAt', async () => {
+    const savedAt = new Date().toISOString();
+    const step1 = { fullName: 'Camila Rodríguez', vehicleYear: 2021, birthDate: '1990-06-15' };
+    const draft: PersistedWizardStateV1 = {
+      schemaVersion: 1,
+      country: 'CO',
+      savedAt,
+      step: 'plans',
+      step1,
+      selectedPlanDocumentId: 'plan-retirado',
+    };
+    storage.values.set(wizardStorageKey('CO'), JSON.stringify(draft));
+    fields$ = of(pricingFields());
+    config$ = of(CONFIG);
+    plans$ = of([makePlan({ documentId: 'plan-actual', key: 'basico', name: 'Plan Básico' })]);
+
+    await store.load('CO');
+    expect(store.selectedPlanDocumentId()).toBe('plan-retirado');
+
+    await store.loadPlans('CO');
+
+    expect(store.selectedPlanDocumentId()).toBeNull();
+    expect(store.selectedPlan()).toBeNull();
+    expect(store.invalidSelectionNotice()).toBe(true);
+    expect(store.canAdvance()).toBe(false);
+
+    const saved = JSON.parse(storage.values.get(wizardStorageKey('CO')) ?? '') as PersistedWizardStateV1;
+    expect(saved.selectedPlanDocumentId).toBeNull();
+    expect(saved.step1).toEqual(step1);
+    expect(saved.savedAt).toBe(savedAt);
+
+    store.selectPlan('plan-actual');
+    expect(store.invalidSelectionNotice()).toBe(false);
+    expect(store.selectedPlanDocumentId()).toBe('plan-actual');
+  });
+
+  it('US02-U13: a valid stored plan survives re-entry while edited Step 1 values recompute prices', async () => {
+    const draft: PersistedWizardStateV1 = {
+      schemaVersion: 1,
+      country: 'CO',
+      savedAt: new Date().toISOString(),
+      step: 'plans',
+      step1: { fullName: 'Camila Rodríguez', vehicleYear: 2021, birthDate: '1990-06-15' },
+      selectedPlanDocumentId: 'planco-estandar',
+    };
+    storage.values.set(wizardStorageKey('CO'), JSON.stringify(draft));
+    fields$ = of(pricingFields());
+    config$ = of(CONFIG);
+    plans$ = of([makePlan()]);
+    store.captureClock(FIXED_CLOCK);
+
+    await store.load('CO');
+    await store.loadPlans('CO');
+
+    expect(store.selectedPlanDocumentId()).toBe('planco-estandar');
+    expect(store.invalidSelectionNotice()).toBe(false);
+    expect(store.restoredSelectionNotice()).toBe(true);
+    expect(store.quotedPlans()[0]?.finalPrice).toBe(620000);
+
+    store.patchValues({ vehicleYear: 2019, birthDate: '2004-11-23' });
+
+    expect(store.selectedPlanDocumentId()).toBe('planco-estandar');
+    expect(store.quotedPlans()[0]?.adjustment.adjustmentPercent).toBe(14);
+    expect(store.quotedPlans()[0]?.finalPrice).toBe(706800);
+    expect(store.quotedPlans()[0]?.formattedFinalPrice).not.toBe('');
+  });
+
+  it('US02-U15: a failed plans fetch keeps the previous catalogue and never clears storage', async () => {
+    fields$ = of(pricingFields());
+    config$ = of(CONFIG);
+    plans$ = of([makePlan()]);
+    await store.load('CO');
+    await store.loadPlans('CO');
+    store.selectPlan('planco-estandar');
+    const before = storage.values.get(wizardStorageKey('CO'));
+
+    const clearSpy = vi.spyOn(WizardPersistenceService.prototype, 'clear');
+    try {
+      plans$ = throwError(() => new HttpErrorResponse({ status: 500, statusText: 'Server Error' }));
+      await store.loadPlans('CO');
+
+      expect(store.plansStatus()).toBe('error');
+      expect(store.plansError()).toContain('HTTP 500');
+      expect(store.plans()).toHaveLength(1);
+      expect(store.selectedPlanDocumentId()).toBe('planco-estandar');
+      expect(store.selectedPlan()).toMatchObject({ documentId: 'planco-estandar' });
+      expect(storage.values.get(wizardStorageKey('CO'))).toBe(before);
+      expect(clearSpy).not.toHaveBeenCalled();
+    } finally {
+      clearSpy.mockRestore();
+    }
   });
 });
