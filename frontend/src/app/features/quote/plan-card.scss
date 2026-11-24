@@ -1,0 +1,153 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.plan-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  height: 100%;
+  min-width: 0;
+  padding: 1.1rem;
+  border: 1px solid var(--color-slate-200);
+  border-radius: 16px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+}
+
+.plan-card--recommended {
+  border: 2px dashed var(--color-emerald);
+  padding: calc(1.1rem - 1px);
+}
+
+.plan-card--selected {
+  border-style: solid;
+  border-color: var(--color-indigo);
+  background: linear-gradient(180deg, var(--color-indigo-soft) 0%, var(--color-surface) 45%);
+}
+
+.plan-card__heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.7rem;
+}
+
+.plan-card__radio {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  accent-color: var(--color-indigo);
+  cursor: pointer;
+}
+
+.plan-card__radio:focus-visible {
+  outline: 2px solid var(--color-indigo-dark);
+  outline-offset: 3px;
+}
+
+.plan-card__label {
+  display: inline-flex;
+  flex: 1 1 10rem;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.6rem;
+  min-height: 44px;
+  font-size: 1.05rem;
+  cursor: pointer;
+}
+
+.plan-card__name {
+  font-weight: 700;
+  color: var(--color-slate-900);
+}
+
+.plan-card__selected {
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: var(--color-indigo-soft);
+  color: var(--color-indigo-dark);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.plan-card__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--color-emerald-dark);
+  border-radius: 999px;
+  background: var(--color-emerald-soft);
+  color: var(--color-emerald-dark);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.plan-card__description {
+  margin: 0;
+  color: var(--color-slate-600);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.plan-card__prices {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 10px;
+  background: var(--color-slate-100);
+}
+
+.plan-card__prices p {
+  margin: 0;
+}
+
+.plan-card__final {
+  color: var(--color-indigo-dark);
+  font-size: 1.05rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.plan-card__base,
+.plan-card__adjustment {
+  color: var(--color-slate-700);
+  font-size: 0.9rem;
+}
+
+.plan-card__adjustment--neutral {
+  color: var(--color-slate-600);
+}
+
+.plan-card__coverages {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.15rem 0.6rem;
+  margin: 0;
+}
+
+.plan-card__coverage-name {
+  margin-top: 0.4rem;
+  color: var(--color-slate-900);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.plan-card__coverage-detail {
+  margin: 0 0 0 0.6rem;
+  color: var(--color-slate-600);
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+
+.plan-card__benefits {
+  margin: 0;
+  padding-left: 1.2rem;
+  color: var(--color-slate-700);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}

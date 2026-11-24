@@ -1,0 +1,82 @@
+<article
+  class="plan-card"
+  [class.plan-card--recommended]="quoted().plan.recommended"
+  [class.plan-card--selected]="selected()"
+>
+  <div class="plan-card__heading">
+    <input
+      class="plan-card__radio"
+      type="radio"
+      name="selectedPlan"
+      [id]="'plan-' + quoted().plan.documentId"
+      [value]="quoted().plan.documentId"
+      [checked]="selected()"
+      [attr.aria-describedby]="describedBy()"
+      (change)="onSelect()"
+      (keydown.enter)="onEnter($event)"
+    />
+    <label class="plan-card__label" [for]="'plan-' + quoted().plan.documentId">
+      <span class="plan-card__name">{{ quoted().plan.name }}</span>
+      @if (selected()) {
+        <span class="plan-card__selected">{{ copy.selectedLabel }}</span>
+      }
+    </label>
+
+    @if (quoted().plan.recommended) {
+      <span class="plan-card__badge" [id]="badgeId()">
+        <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+          <path
+            d="M8 1.5 10 5.6l4.5.6-3.3 3.1.8 4.4L8 11.6l-4 2.1.8-4.4L1.5 6.2 6 5.6 8 1.5Z"
+            fill="currentColor"
+          />
+        </svg>
+        {{ copy.recommendedBadge }}
+      </span>
+    }
+  </div>
+
+  <p class="plan-card__description" [id]="descriptionId()">{{ quoted().plan.shortDescription }}</p>
+
+  <div class="plan-card__prices" [id]="priceId()">
+    <p class="plan-card__final">
+      {{ copy.finalPriceLabel }}:
+      <data [attr.value]="quoted().finalPrice">{{ quoted().formattedFinalPrice }}</data>
+    </p>
+    <p class="plan-card__base">{{ copy.basePriceLabel }}: {{ quoted().formattedBasePrice }}</p>
+    @if (quoted().adjustment.adjustmentPercent > 0) {
+      <p class="plan-card__adjustment">
+        {{ copy.adjustmentLabel }}: +{{ quoted().adjustment.adjustmentPercent }}% ·
+        {{ adjustmentText() }}
+      </p>
+    } @else {
+      <p class="plan-card__adjustment plan-card__adjustment--neutral">{{ copy.noAdjustment }}</p>
+    }
+  </div>
+
+  @if (quoted().plan.coverages.length > 0) {
+    <dl class="plan-card__coverages">
+      @for (coverage of quoted().plan.coverages; track $index) {
+        <dt class="plan-card__coverage-name">{{ coverage.name }}</dt>
+        <dd class="plan-card__coverage-detail">
+          {{ copy.coverageLimitLabel }}: {{ formatMoney(coverage.limit) }}
+        </dd>
+        <dd class="plan-card__coverage-detail">
+          {{ copy.coverageDeductibleLabel }}:
+          @if (coverage.deductible === null) {
+            {{ copy.notApplicable }}
+          } @else {
+            {{ formatMoney(coverage.deductible) }}
+          }
+        </dd>
+      }
+    </dl>
+  }
+
+  @if (quoted().plan.benefits.length > 0) {
+    <ul class="plan-card__benefits">
+      @for (benefit of quoted().plan.benefits; track $index) {
+        <li>{{ benefit }}</li>
+      }
+    </ul>
+  }
+</article>

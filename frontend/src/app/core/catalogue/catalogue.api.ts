@@ -7,12 +7,15 @@ import type {
   CountryCode,
   CountryConfig,
   CountryConfigDto,
+  CurrencyCode,
   FormFieldConfig,
   FormFieldDto,
   FormFieldOption,
   FormFieldSection,
   FormFieldType,
   FormFieldValidationRules,
+  InsurancePlan,
+  PlanCoverageItem,
   StrapiListResponse,
 } from '../models';
 import { COUNTRY_CATALOG_BY_CODE } from '../country/country-catalog';
@@ -54,6 +57,182 @@ export class CatalogueApi {
     return this.http
       .get<StrapiListResponse<unknown>>(url)
       .pipe(map((response) => this.mapCountryConfig(response, country)));
+  }
+
+  getInsurancePlans(country: CountryCode): Observable<readonly InsurancePlan[]> {
+    const url =
+      `${this.apiBaseUrl}/api/insurance-plans?filters[country][$eq]=${country}` +
+      '&filters[active][$eq]=true&sort=order:asc&pagination[pageSize]=100';
+
+    return this.http
+      .get<StrapiListResponse<unknown>>(url)
+      .pipe(map((response) => this.mapPlans(response, country)));
+  }
+
+  private mapPlans(
+    response: StrapiListResponse<unknown>,
+    country: CountryCode,
+  ): readonly InsurancePlan[] {
+    const rows = Array.isArray(response.data) ? response.data : [];
+    const pagination = response.meta?.pagination;
+    if (pagination && pagination.total > rows.length && isDevMode()) {
+      console.warn(
+        `[catalogue] only ${rows.length} of ${pagination.total} plans for ${country} were received (page size 100).`,
+      );
+    }
+
+    const mapped: InsurancePlan[] = [];
+    for (const row of rows) {
+      const plan = this.toInsurancePlan(row, country);
+      if (plan) {
+        mapped.push(plan);
+      }
+    }
+
+    mapped.sort((left, right) => left.order - right.order || left.id - right.id);
+    const byDocumentId = new Map<string, InsurancePlan>();
+    for (const plan of mapped) {
+      const existing = byDocumentId.get(plan.documentId);
+      if (existing) {
+        if (isDevMode()) {
+          console.warn(
+            `[catalogue] duplicate plan documentId "${plan.documentId}"; keeping order ${existing.order} (id ${existing.id}).`,
+          );
+        }
+        continue;
+      }
+      byDocumentId.set(plan.documentId, plan);
+    }
+
+    return [...byDocumentId.values()].sort(
+      (left, right) => left.order - right.order || left.id - right.id,
+    );
+  }
+
+  private toInsurancePlan(raw: unknown, country: CountryCode): InsurancePlan | null {
+    if (!isRecord(raw)) {
+      this.warnInvalidPlan('non-object row');
+      return null;
+    }
+
+    const id = raw['id'];
+    const documentId = raw['documentId'];
+    const key = raw['key'];
+    const name = raw['name'];
+    const shortDescription = raw['shortDescription'];
+    const rawPrice = raw['basePrice'];
+    const currency = raw['currency'];
+    const order = raw['order'];
+    const active = raw['active'];
+    const rowCountry = raw['country'];
+    const recommended = raw['recommended'];
+
+    if (
+      typeof id !== 'number' ||
+      !Number.isFinite(id) ||
+      typeof documentId !== 'string' ||
+      documentId.trim().length === 0 ||
+      typeof key !== 'string' ||
+      key.trim().length === 0 ||
+      typeof order !== 'number' ||
+      !Number.isFinite(order)
+    ) {
+      this.warnInvalidPlan('missing or malformed required attributes');
+      return null;
+    }
+
+    if (active !== true) {
+      this.warnInvalidPlan(`inactive plan "${key}"`);
+      return null;
+    }
+    if (rowCountry !== country) {
+      this.warnInvalidPlan(`plan "${key}" from country ${String(rowCountry)} in ${country} response`);
+      return null;
+    }
+
+    const hasPrice =
+      typeof rawPrice === 'number' ||
+      (typeof rawPrice === 'string' && rawPrice.trim().length > 0);
+    const basePrice = hasPrice ? Number(rawPrice) : Number.NaN;
+    if (!Number.isFinite(basePrice) || !Number.isInteger(basePrice) || basePrice < 0) {
+      this.warnInvalidPlan(`invalid basePrice on plan "${key}"`);
+      return null;
+    }
+
+    const expectedCurrency = COUNTRY_CATALOG_BY_CODE[country].currency;
+    if (currency !== expectedCurrency) {
+      this.warnInvalidPlan(`currency mismatch on plan "${key}"`);
+      return null;
+    }
+
+    return {
+      id,
+      documentId,
+      key,
+      name: typeof name === 'string' && name.length > 0 ? name : key,
+      shortDescription: typeof shortDescription === 'string' ? shortDescription : '',
+      basePrice,
+      currency: expectedCurrency as CurrencyCode,
+      coverages: this.parseCoverages(raw['coverages'], key),
+      benefits: this.parseBenefits(raw['benefits'], key),
+      order,
+      recommended: recommended === true,
+      country,
+    };
+  }
+
+  private parseCoverages(raw: unknown, planKey: string): readonly PlanCoverageItem[] {
+    if (!Array.isArray(raw)) {
+      if (raw !== null && raw !== undefined && isDevMode()) {
+        console.warn(`[catalogue] dropping malformed coverages on plan "${planKey}".`);
+      }
+      return [];
+    }
+
+    const coverages: PlanCoverageItem[] = [];
+    for (const entry of raw) {
+      if (
+        !isRecord(entry) ||
+        typeof entry['name'] !== 'string' ||
+        entry['name'].trim().length === 0 ||
+        typeof entry['limit'] !== 'number' ||
+        !Number.isFinite(entry['limit'])
+      ) {
+        if (isDevMode()) {
+          console.warn(`[catalogue] dropping malformed coverage on plan "${planKey}".`);
+        }
+        continue;
+      }
+
+      const rawDeductible = entry['deductible'];
+      const deductible =
+        rawDeductible === null || rawDeductible === undefined
+          ? null
+          : typeof rawDeductible === 'number' && Number.isFinite(rawDeductible)
+            ? rawDeductible
+            : null;
+      coverages.push({ name: entry['name'], limit: entry['limit'], deductible });
+    }
+    return coverages;
+  }
+
+  private parseBenefits(raw: unknown, planKey: string): readonly string[] {
+    if (!Array.isArray(raw)) {
+      if (raw !== null && raw !== undefined && isDevMode()) {
+        console.warn(`[catalogue] dropping malformed benefits on plan "${planKey}".`);
+      }
+      return [];
+    }
+
+    const benefits: string[] = [];
+    for (const entry of raw) {
+      if (typeof entry === 'string') {
+        benefits.push(entry);
+      } else if (isDevMode()) {
+        console.warn(`[catalogue] dropping malformed benefit on plan "${planKey}".`);
+      }
+    }
+    return benefits;
   }
 
   private mapFields(
@@ -293,6 +472,12 @@ export class CatalogueApi {
   private warnInvalid(reason: string): void {
     if (isDevMode()) {
       console.warn(`[catalogue] dropping form-field row: ${reason}.`);
+    }
+  }
+
+  private warnInvalidPlan(reason: string): void {
+    if (isDevMode()) {
+      console.warn(`[catalogue] dropping insurance-plan row: ${reason}.`);
     }
   }
 }

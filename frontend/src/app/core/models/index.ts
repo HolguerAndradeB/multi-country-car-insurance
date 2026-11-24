@@ -14,6 +14,13 @@ export type {
   FormFieldValidationRules,
 } from './form-field.models';
 export type {
+  InsurancePlan,
+  InsurancePlanDto,
+  PlanCoverageItem,
+  PriceAdjustmentResult,
+  QuotedPlan,
+} from './plan.models';
+export type {
   CountryConfigDto,
   FormFieldDto,
   StrapiListResponse,

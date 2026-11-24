@@ -41,27 +41,37 @@ function parseIsoDate(value: string): Date | null {
   return parsed;
 }
 
-/** 18th birthday must have occurred on or before today's local calendar date. */
-export function isLegalAge(birthDateIso: string, today: Date = new Date()): boolean {
+/**
+ * Exact age on a local calendar date (US-01 G1/G2, US-02 §2.2).
+ * A 29-Feb birthday is considered to occur on 28-Feb in a non-leap year.
+ * Returns `null` for future, impossible, malformed or pre-1900 dates.
+ */
+export function ageOnDate(birthDateIso: string, today: Date): number | null {
   const birthDate = parseIsoDate(birthDateIso);
   if (!birthDate) {
-    return false;
+    return null;
   }
 
   const localToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   if (birthDate > localToday) {
-    return false;
+    return null;
   }
 
-  const turning18Year = birthDate.getFullYear() + 18;
-  const anniversaryMonth = birthDate.getMonth();
+  const currentYear = localToday.getFullYear();
   let anniversaryDay = birthDate.getDate();
-  if (anniversaryMonth === 1 && anniversaryDay === 29 && !isLeapYear(turning18Year)) {
+  if (birthDate.getMonth() === 1 && anniversaryDay === 29 && !isLeapYear(currentYear)) {
     anniversaryDay = 28;
   }
+  const anniversary = new Date(currentYear, birthDate.getMonth(), anniversaryDay);
 
-  const turns18 = new Date(turning18Year, anniversaryMonth, anniversaryDay);
-  return turns18 <= localToday;
+  const age = currentYear - birthDate.getFullYear() - (localToday < anniversary ? 1 : 0);
+  return age < 0 ? null : age;
+}
+
+/** 18th birthday must have occurred on or before today's local calendar date. */
+export function isLegalAge(birthDateIso: string, today: Date = new Date()): boolean {
+  const age = ageOnDate(birthDateIso, today);
+  return age !== null && age >= 18;
 }
 
 /** Strips separators and normalises a Chilean RUT to `12345678-9`. */

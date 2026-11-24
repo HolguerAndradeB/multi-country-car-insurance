@@ -1,0 +1,13 @@
+<section class="summary" data-testid="summary-placeholder-shell">
+  <app-wizard-stepper activeStep="summary" />
+
+  <div class="summary__card">
+    <h1 #pageHeading tabindex="-1" data-testid="summary-placeholder" class="summary__title">
+      {{ copy.summaryHeading }}
+    </h1>
+    <p class="summary__body">{{ copy.summaryBody }}</p>
+    <button class="button button--ghost" type="button" (click)="backToPlans()">
+      {{ copy.backToPlans }}
+    </button>
+  </div>
+</section>

@@ -3,7 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRouteSnapshot, NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs';
 
-import type { AppLocale, CountryCode, CurrencyCode, WizardStep } from '../models';
+import type { AppLocale, CountryCode, CountryRouteSegment, CurrencyCode, WizardStep } from '../models';
 import { COUNTRY_CATALOG_BY_CODE, toCountryCode } from './country-catalog';
 
 interface RouteContext {
@@ -34,21 +34,26 @@ export class CountryContextService {
   }
 
   /** Single place where internal wizard links are built (ADR-001 §4.2). */
-  quotePath(step: 'quote' | 'plans' = 'quote'): string {
+  quotePath(step: 'quote' | 'plans' | 'summary' = 'quote'): string {
     const segment = this.entry().routeSegment;
-    return step === 'plans' ? `/${segment}/quote/plans` : `/${segment}/quote`;
+    return this.buildPath(segment, step);
   }
 
-  pathFor(country: CountryCode, step: 'quote' | 'plans' = 'quote'): string {
-    const segment = COUNTRY_CATALOG_BY_CODE[country].routeSegment;
-    return step === 'plans' ? `/${segment}/quote/plans` : `/${segment}/quote`;
+  pathFor(country: CountryCode, step: 'quote' | 'plans' | 'summary' = 'quote'): string {
+    return this.buildPath(COUNTRY_CATALOG_BY_CODE[country].routeSegment, step);
+  }
+
+  private buildPath(segment: CountryRouteSegment, step: 'quote' | 'plans' | 'summary'): string {
+    const suffix = step === 'quote' ? '' : `/${step}`;
+    return `/${segment}/quote${suffix}`;
   }
 
   private readFromRouter(): RouteContext {
     const snapshot = this.router.routerState.snapshot.root;
+    const path = this.router.url.split('?')[0];
     return {
       country: readCountryFromSnapshot(snapshot),
-      step: this.router.url.split('?')[0].includes('/plans') ? 'plans' : 'policyholder',
+      step: path.includes('/summary') ? 'summary' : path.includes('/plans') ? 'plans' : 'policyholder',
     };
   }
 }

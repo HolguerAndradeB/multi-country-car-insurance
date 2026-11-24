@@ -1,0 +1,108 @@
+<section class="plans" data-testid="plans-page">
+  <app-wizard-stepper activeStep="plans" />
+
+  @switch (store.plansStatus()) {
+    @case ('idle') {
+      <header class="plans__header">
+        <h1 #pageHeading tabindex="-1" class="plans__title">{{ copy.plansHeading }}</h1>
+        <p class="plans__intro">{{ copy.plansIntro }}</p>
+      </header>
+      <section class="plans__loading" aria-busy="true" aria-live="polite">
+        <span class="sr-only">{{ copy.plansLoading }}</span>
+        <div class="skeleton skeleton--wide" aria-hidden="true"></div>
+        <div class="skeleton" aria-hidden="true"></div>
+        <div class="skeleton skeleton--short" aria-hidden="true"></div>
+      </section>
+    }
+    @case ('loading') {
+      <header class="plans__header">
+        <h1 #pageHeading tabindex="-1" class="plans__title">{{ copy.plansHeading }}</h1>
+        <p class="plans__intro">{{ copy.plansIntro }}</p>
+      </header>
+      <section class="plans__loading" aria-busy="true" aria-live="polite">
+        <span class="sr-only">{{ copy.plansLoading }}</span>
+        <div class="skeleton skeleton--wide" aria-hidden="true"></div>
+        <div class="skeleton" aria-hidden="true"></div>
+        <div class="skeleton skeleton--short" aria-hidden="true"></div>
+      </section>
+    }
+    @case ('empty') {
+      <section class="plans__panel" role="status">
+        <h1 #pageHeading tabindex="-1" class="plans__title">{{ copy.plansEmptyTitle }}</h1>
+        <p class="plans__panel-body">{{ copy.plansEmptyBody }}</p>
+        <div class="plans__actions plans__actions--panel">
+          <button class="button button--primary" type="button" (click)="onRetry()">
+            {{ copy.retry }}
+          </button>
+          <button class="button button--ghost" type="button" (click)="onBack()">
+            {{ copy.backToData }}
+          </button>
+        </div>
+      </section>
+    }
+    @case ('error') {
+      <section class="plans__panel plans__panel--error" role="alert">
+        <h1 #pageHeading tabindex="-1" class="plans__title">{{ copy.plansErrorTitle }}</h1>
+        <p class="plans__panel-body">{{ copy.plansErrorBody }}</p>
+        @if (store.plansError()) {
+          <p class="plans__panel-detail">{{ store.plansError() }}</p>
+        }
+        <div class="plans__actions plans__actions--panel">
+          <button class="button button--primary" type="button" (click)="onRetry()">
+            {{ copy.retry }}
+          </button>
+          <button class="button button--ghost" type="button" (click)="onBack()">
+            {{ copy.backToData }}
+          </button>
+        </div>
+      </section>
+    }
+    @case ('ready') {
+      <header class="plans__header">
+        <h1 #pageHeading tabindex="-1" class="plans__title">{{ copy.plansHeading }}</h1>
+        <p class="plans__intro">{{ copy.plansIntro }}</p>
+      </header>
+      <form class="plans__form" novalidate (submit)="onSubmit($event)">
+        <fieldset class="plans__fieldset">
+          <legend class="plans__legend">{{ copy.planSelectLegend }}</legend>
+
+          @if (store.invalidSelectionNotice()) {
+            <p class="plans__notice plans__notice--invalid" role="status" aria-live="polite">
+              {{ copy.invalidSelectionNotice }}
+            </p>
+          }
+          @if (store.restoredSelectionNotice()) {
+            <p class="plans__notice plans__notice--restored" role="status" aria-live="polite">
+              {{ copy.restoredSelectionNotice }}
+            </p>
+          }
+
+          <div class="plans__grid">
+            @for (quoted of store.quotedPlans(); track quoted.plan.documentId) {
+              <app-plan-card
+                [quoted]="quoted"
+                [selected]="quoted.plan.documentId === store.selectedPlanDocumentId()"
+                (selection)="onSelect($event)"
+              />
+            }
+          </div>
+        </fieldset>
+
+        <p class="plans__footnote">{{ copy.simulatedFootnote }}</p>
+
+        <div class="plans__actions">
+          <button class="button button--ghost" type="button" (click)="onBack()">
+            {{ copy.backToData }}
+          </button>
+          <button
+            class="button button--primary button--large"
+            type="submit"
+            [disabled]="!store.canAdvance()"
+          >
+            {{ copy.continue }}
+          </button>
+        </div>
+      </form>
+    }
+  }
+</section>

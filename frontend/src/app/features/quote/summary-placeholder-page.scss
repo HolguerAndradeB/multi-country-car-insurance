@@ -1,10 +1,15 @@
-.placeholder {
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.summary {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
 }
 
-.placeholder__card {
+.summary__card {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -16,13 +21,13 @@
   box-shadow: var(--shadow-card);
 }
 
-.placeholder__title {
+.summary__title {
   margin: 0;
   color: var(--color-slate-900);
   font-size: 1.8rem;
 }
 
-.placeholder__body {
+.summary__body {
   margin: 0;
   color: var(--color-slate-600);
   line-height: 1.6;

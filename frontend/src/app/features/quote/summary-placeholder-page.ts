@@ -13,13 +13,13 @@ import { UI_COPY } from '../../core/i18n/ui-copy';
 import { WizardStepperComponent } from './wizard-stepper';
 
 @Component({
-  selector: 'app-plans-placeholder-page',
+  selector: 'app-summary-placeholder-page',
   imports: [WizardStepperComponent],
-  templateUrl: './plans-placeholder-page.html',
-  styleUrl: './plans-placeholder-page.scss',
+  templateUrl: './summary-placeholder-page.html',
+  styleUrl: './summary-placeholder-page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class PlansPlaceholderPageComponent {
+export class SummaryPlaceholderPageComponent {
   private readonly context = inject(CountryContextService);
   private readonly router = inject(Router);
   private readonly heading = viewChild<ElementRef<HTMLElement>>('pageHeading');
@@ -36,7 +36,7 @@ export class PlansPlaceholderPageComponent {
     });
   }
 
-  protected goBack(): void {
-    void this.router.navigateByUrl(this.context.quotePath('quote'));
+  protected backToPlans(): void {
+    void this.router.navigateByUrl(this.context.quotePath('plans'));
   }
 }
