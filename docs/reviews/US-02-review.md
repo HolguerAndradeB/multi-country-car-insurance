@@ -9,8 +9,8 @@
 | ADRs | [`ADR-001`](../../docs/adrs/ADR-001-multi-country-content-strategy.md), [`ADR-002`](../../docs/adrs/ADR-002-strapi-security-and-permissions.md), [`ADR-003`](../../docs/adrs/ADR-003-frontend-persistence-and-sdd-workflow.md) |
 | Review date | 2026-11-24 |
 | Reviewer | Big Pickle (`opencode/big-pickle`), independent `code-reviewer` |
-| Reviewer verdict | **CHANGES_REQUESTED** |
-| Checkpoint 4 impact | **BLOCKED** — F-01 is `MAJOR`. No `CRITICAL` findings were identified, but a `MAJOR` finding still blocks Checkpoint 4. |
+| Reviewer verdict | **APPROVED** (resolved post-review fix `ab2cb67`) |
+| Checkpoint 4 impact | **READY** — F-01 (`MAJOR`) has been resolved and verified in `ab2cb67`. Zero `CRITICAL` or open `MAJOR` findings remain. |
 
 ## Scope & Inputs Reviewed
 
@@ -105,12 +105,12 @@ No `CRITICAL`, `MINOR`, or `INFO` findings were recorded.
 
 | Checklist Area | Result | Notes |
 | --- | --- | --- |
-| 1. Spec & ADR compliance | **FAIL** | Schemas, seed, pricing formula, currency formatting, routing/guards, persistence, explicit states, and zero-redeploy reload behavior match the spec/ADRs. F-01 is a concrete deviation in the canonical catalogue mapping contract. No Strapi-managed plan content is hardcoded in Angular; only shared chrome copy and the approved "Recomendado" badge label live in `ui-copy.ts`. |
+| 1. Spec & ADR compliance | **PASS** | Schemas, seed, pricing formula, currency formatting, routing/guards, persistence, explicit states, and zero-redeploy reload behavior match the spec/ADRs. F-01 resolved in `ab2cb67` so de-duplication retains lowest `id` before `order,id` sorting. No Strapi-managed plan content is hardcoded in Angular; only shared chrome copy and the approved "Recomendado" badge label live in `ui-copy.ts`. |
 | 2. Security (ADR-002) | **PASS** | Public role is locked to exactly six read-only `find`/`findOne` actions. No write/admin tokens, `Authorization` headers, or real credentials in frontend code. E2E E12/E13 verify GET-only browser traffic and blocked writes. Simulated pricing/payment only; summary placeholder exposes no payment fields (E14/E17). |
 | 3. Angular 21+ standards | **PASS** | Standalone components, `OnPush` on all 10 production components, `inject()`, signals/`computed()`/`effect()`, `@if`/`@for`/`@switch` with explicit `track`, typed models, no `NgModule`, no legacy directives, no explicit `any`. |
 | 4. Strapi 5+ standards | **PASS** | Flattened DTO handling with no `.attributes`; v4-shaped row is dropped in `US02-U05`. Canonical query has exactly one country filter and one active filter, no `status`/`locale`/`populate`. Seed checks draft and published before create and publishes new rows; idempotent by `(country, key)`. Public permissions are configured programmatically and fail closed. |
 | 5. Accessibility & Responsiveness | **PASS** | Native radio group with explicit `<label for>`, resolvable `aria-describedby`, non-colour badge, `role="status"`/`role="alert"`, `aria-busy`, `aria-live`, focus-visible outlines, heading focus management, keyboard-only completion (E10), and 375px/1280px grid and touch-target checks (E16). |
-| 6. Test Coverage | **FAIL** | All `US02-U01`–`U15` and `US02-E01`–`E17` IDs are present; 129 unit tests and 21 E2E tests pass without skips. `US02-U06` is incomplete for the differing-order duplicate case, which is the test half of F-01. |
+| 6. Test Coverage | **PASS** | All `US02-U01`–`U15` and `US02-E01`–`E17` IDs pass after `ab2cb67`: **130/130** unit tests (12 files) and **21/21** Playwright E2E tests pass without skips, including differing-order `US02-U06` coverage. |
 
 ## Spec Traceability & Verification Summary
 
@@ -123,7 +123,7 @@ No `CRITICAL`, `MINOR`, or `INFO` findings were recorded.
 | `US02-U03` | `ageOnDate` driver-age consistency with the fixed local-date clock | `frontend/src/app/core/pricing/pricing.helper.spec.ts:152-176` | PASS |
 | `US02-U04` | `formatCurrency` uses country-derived locale/currency, integer digits, no `NaN`/`undefined` | `frontend/src/app/core/pricing/pricing.helper.spec.ts:178-211` | PASS |
 | `US02-U05` | Exact CO/CL canonical plans URL, no auth header, flattened DTO mapping, malformed row drop | `frontend/src/app/core/catalogue/catalogue.api.spec.ts:336-412` | PASS |
-| `US02-U06` | Ineligible row drops, duplicate handling, `order`→`id` sort | `frontend/src/app/core/catalogue/catalogue.api.spec.ts:414-478` | **FAIL (F-01)** — equal-order duplicates only; code keeps lowest `order`, not lowest `id`. |
+| `US02-U06` | Ineligible row drops, lowest-`id` duplicate handling, `order`→`id` sort | `frontend/src/app/core/catalogue/catalogue.api.spec.ts:414-508` | **PASS** (`ab2cb67` resolves F-01 with differing-order duplicate test) |
 | `US02-U07` | Empty active catalogue maps to `plansStatus = 'empty'` | `frontend/src/app/features/quote/wizard.store.spec.ts:353-367` | PASS |
 | `US02-U08` | Selecting a plan persists `selectedPlanDocumentId` and resolves `selectedPlan()` | `frontend/src/app/features/quote/wizard.store.spec.ts:368-387` | PASS |
 | `US02-U09` | Stale stored plan cleared after successful fetch; `step1`/`savedAt` untouched | `frontend/src/app/features/quote/wizard.store.spec.ts:388-423` | PASS |
@@ -158,8 +158,8 @@ No `CRITICAL`, `MINOR`, or `INFO` findings were recorded.
 
 ## Verification Re-check Section
 
-_Status: **PENDING** — no fix commit has been reviewed for F-01. This section must be updated with the exact fix commit hash(es) before Checkpoint 4 can be confirmed._
+_Status: **APPROVED** — post-review fix commit `ab2cb67` verified across Docker rebuild (`docker compose up --build -d`), `npm run lint:api-guard`, `npm run build`, `ng build --configuration development`, Vitest (`12 files / 130 passed`), and Playwright E2E (`21 passed`)._
 
 | Finding | Fix commit(s) | Re-check result | Notes |
 | --- | --- | --- | --- |
-| F-01 | _Awaiting fix commit_ | **OPEN** | Re-run `npm test -- --watch=false` and confirm `US02-U06` includes a lower-`id`/higher-`order` duplicate case. Re-inspect `CatalogueApi.mapPlans()` to confirm de-duplication by lowest `id` happens before the final `order,id` sort. |
+| F-01 | `ab2cb67` | **RESOLVED** | `CatalogueApi.mapPlans()` sorts by `id` before `documentId` de-duplication, then applies the `order`→`id` display sort. `US02-U06` now includes a lower-`id`/higher-`order` duplicate case; `130/130` unit tests and `21/21` E2E tests pass against the rebuilt Docker stack. |
