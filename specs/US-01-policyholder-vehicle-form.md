@@ -2,7 +2,7 @@
 
 **Story ID:** `US-01`
 
-**Status:** Draft (Awaiting Checkpoint 3 Human Approval)
+**Status:** Approved (Checkpoint 3 — 2026-11-23)
 
 **Date:** 2026-11-23
 
@@ -23,7 +23,7 @@
 | Global conventions | [`AGENTS.md`](../AGENTS.md) §1, §2, §4.1, §4.2, §4.3, §4.4, §5, §8 |
 | Implemented by | `strapi-dev` (`backend/`), `angular-dev` (`frontend/`) |
 | Verified by | `tester-dev` (unit + Playwright E2E), `code-reviewer` (`docs/reviews/US-01-review.md`), human Checkpoint 4 |
-| Status | **Draft (Awaiting Checkpoint 3 Human Approval)** |
+| Status | **Approved (Checkpoint 3 — 2026-11-23)** |
 
 ### 1.2 Scope of this increment
 
@@ -774,9 +774,16 @@ No real identity documents, plates, addresses, or personal data appear in seeds,
 
 ---
 
+### Checkpoint 3 Resolution (2026-11-23)
+
+1. **Step 2 placeholder shell:** Approved — ship `PlansPlaceholderPageComponent` at `/:country/quote/plans` protected by `step1CompleteGuard` so `US-01` AC4 ("Keep data when going back") is verifiable within `US-01` and replaced cleanly in `US-02`.
+2. **Legal-age boundary convention:** Approved — evaluate against the browser's local calendar date; 29-Feb birthdays reach their anniversary on 28-Feb in non-leap years; turning 18 today is valid.
+3. **Chilean RUT strictness:** Approved — enforce strict módulo-11 check digit verification, accept dotted/dashed/bare input, and normalize to `12345678-9`.
+4. **Editorial rules for `key` and `order`:** Approved — `key` is immutable once published, `order` ties break by `id: asc`, and editors keep `section` orders contiguous.
+
 ### Approval block
 
 | Role | Name | Decision | Date |
 | --- | --- | --- | --- |
-| Human project owner (Checkpoint 3) |  | ☐ Approved · ☐ Approved with changes · ☐ Rejected |  |
+| Human project owner (Checkpoint 3) | Holguer | ☑ Approved | 2026-11-23 |
 | `spec-analyst` (author) |  | Submitted for review | 2026-11-23 |
