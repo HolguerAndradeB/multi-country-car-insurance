@@ -2,7 +2,7 @@
 
 **Story ID:** `US-03`
 
-**Status:** Draft — awaiting Checkpoint 3 human approval
+**Status:** Approved — Checkpoint 3 (2026-11-24)
 
 **Date:** 2026-11-24
 
@@ -24,7 +24,7 @@
 | Global conventions | [`AGENTS.md`](../AGENTS.md) §1, §2, §4.1, §4.2, §4.3, §4.4, §5, §8 |
 | Implemented by | `angular-dev` (`frontend/`), `strapi-dev` (`backend/` — **seed copy only**, see §3) |
 | Verified by | `tester-dev` (unit + Playwright E2E), `code-reviewer` (`docs/reviews/US-03-review.md`), human Checkpoint 4 |
-| Status | **Draft — awaiting Checkpoint 3 human approval** |
+| Status | **Approved — Checkpoint 3 (2026-11-24)** |
 
 **No new ADR is introduced by this increment.** `ADR-001` §4.1 already declares `country-config.termsAndConditions` and `country-config.documentMaskVisibleEnd`; `ADR-002` §4.1 already grants Public `find`/`findOne` on `country-config` (exercised once in US-01 and now again, live, in US-03); `ADR-003` §4.2 already fixes the persisted shape and §4.4 already governs back-edit continuity. US-03 activates those decisions and makes them testable — it does **not** amend them. No new Strapi collection type, no new Public permission, and no new `/api/` URL is introduced. Every derivation that would change an ADR is instead listed as a Checkpoint 3 open question in §7.4.
 
@@ -736,8 +736,13 @@ No real identity documents, plates, addresses, card data, or personal data appea
 
 | Role | Name | Decision | Date |
 | --- | --- | --- | --- |
-| Human project owner (Checkpoint 3) | Holguer | ☐ Pending review | — |
-| `spec-analyst` (author) |  | Submitted as **Draft** | 2026-11-24 |
+| Human project owner (Checkpoint 3) | Holguer | ☑ Approved | 2026-11-24 |
+| `spec-analyst` (author) |  | Submitted as **Draft**, approved at Checkpoint 3 | 2026-11-24 |
 
-**Implementation must not begin until this Draft is approved and the four open questions in §7.4 are answered.**
+### Checkpoint 3 Resolution (2026-11-24)
+
+1. **Terms seed copy and existing databases (§3.2, G15):** **Option A approved** — the country-distinct simulated `TERMS_AND_CONDITIONS_CO` and `TERMS_AND_CONDITIONS_CL` strings are approved as the demo baseline, keeping strict create-only idempotency in `seed.ts` (fresh databases get the updated seed copy automatically; business teams edit existing environments via the Strapi admin). No migration code is added.
+2. **Simulated payment failure trigger (G18, §5.5):** **Option A approved** — injectable test hook (`SIMULATED_PAYMENT_FAILURE_HOOK` / `SIMULATED_PAYMENT_CONFIG` InjectionToken) with **zero** failure-simulation controls in the shipped UI. The default hook implementation reads an optional non-UI runtime flag on `globalThis` (`__WIZARD_SIMULATE_PAYMENT_FAILURE__`) so unit tests inject via `TestBed` and Playwright E2E tests against the Docker build can trigger rejection deterministically (`US03-E11`) without UI clutter, URL hacks, or network traffic.
+3. **Reload after confirmation and quote-number determinism (G19, G23):** **Approved (Option A)** — confirmation and `termsAccepted` remain in-memory only (`PersistedWizardStateV1` stays `schemaVersion: 1`), and quote numbers are deterministically generated via FNV-1a + `QuoteClock` (`COT-<CO|CL>-<YYYYMMDD>-<XXXXXX>`).
+4. **Live refresh and masking/display contract (G7–G11, §5.4, §5.6):** **Approved** — call `getCountryConfig()` live on every Step 3 entry/retry, mask `documentNumber` with `•` (`visibleEnd <= 0` full mask, short values verbatim, RUT `-K`/`-<digit>` tail rule), display `"Sí"`/`"No"` booleans, omit optional blanks, show `"—"` for unexpected required blanks, localize ISO dates, and resolve select `option.label`.
 
