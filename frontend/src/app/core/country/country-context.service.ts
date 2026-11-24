@@ -1,0 +1,63 @@
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRouteSnapshot, NavigationEnd, Router } from '@angular/router';
+import { filter } from 'rxjs';
+
+import type { AppLocale, CountryCode, CurrencyCode, WizardStep } from '../models';
+import { COUNTRY_CATALOG_BY_CODE, toCountryCode } from './country-catalog';
+
+interface RouteContext {
+  readonly country: CountryCode;
+  readonly step: WizardStep;
+}
+
+/** Reads the country exclusively from the router; no root `ActivatedRoute` injection. */
+@Injectable({ providedIn: 'root' })
+export class CountryContextService {
+  private readonly router = inject(Router);
+
+  private readonly routeContext = signal<RouteContext>(this.readFromRouter());
+
+  readonly country = computed<CountryCode>(() => this.routeContext().country);
+  readonly currentStep = computed<WizardStep>(() => this.routeContext().step);
+  readonly entry = computed(() => COUNTRY_CATALOG_BY_CODE[this.country()]);
+  readonly locale = computed<AppLocale>(() => this.entry().locale);
+  readonly currency = computed<CurrencyCode>(() => this.entry().currency);
+
+  constructor() {
+    this.router.events
+      .pipe(
+        filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+        takeUntilDestroyed(),
+      )
+      .subscribe(() => this.routeContext.set(this.readFromRouter()));
+  }
+
+  /** Single place where internal wizard links are built (ADR-001 §4.2). */
+  quotePath(step: 'quote' | 'plans' = 'quote'): string {
+    const segment = this.entry().routeSegment;
+    return step === 'plans' ? `/${segment}/quote/plans` : `/${segment}/quote`;
+  }
+
+  pathFor(country: CountryCode, step: 'quote' | 'plans' = 'quote'): string {
+    const segment = COUNTRY_CATALOG_BY_CODE[country].routeSegment;
+    return step === 'plans' ? `/${segment}/quote/plans` : `/${segment}/quote`;
+  }
+
+  private readFromRouter(): RouteContext {
+    const snapshot = this.router.routerState.snapshot.root;
+    return {
+      country: readCountryFromSnapshot(snapshot),
+      step: this.router.url.split('?')[0].includes('/plans') ? 'plans' : 'policyholder',
+    };
+  }
+}
+
+/** Walks down `firstChild` snapshots so this service works at the root injector. */
+export function readCountryFromSnapshot(snapshot: ActivatedRouteSnapshot): CountryCode {
+  let current: ActivatedRouteSnapshot = snapshot;
+  while (current.firstChild) {
+    current = current.firstChild;
+  }
+  return toCountryCode(current.paramMap.get('country'));
+}

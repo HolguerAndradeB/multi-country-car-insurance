@@ -1,0 +1,16 @@
+<div class="switcher">
+  <label class="switcher__label" for="country-switcher">{{ copy.countryLabel }}</label>
+  <select
+    #switcher
+    class="switcher__control"
+    id="country-switcher"
+    [value]="selectedSegment()"
+    (change)="onChange(switcher.value)"
+  >
+    @for (entry of countries; track entry.code) {
+      <option [value]="entry.routeSegment" [selected]="isSelected(entry.code)">
+        {{ entry.displayName }}
+      </option>
+    }
+  </select>
+</div>

@@ -1,0 +1,60 @@
+<section class="step1">
+  <app-wizard-stepper activeStep="policyholder" />
+
+  <header class="step1__header">
+    <h1 #pageHeading tabindex="-1" class="step1__title">{{ copy.step1Heading }}</h1>
+    <p class="step1__intro">{{ copy.step1Intro }}</p>
+  </header>
+
+  @if (store.restoredFromDraft()) {
+    <p class="step1__notice" aria-live="polite">{{ copy.restoredDraft }}</p>
+  }
+
+  @switch (store.status()) {
+    @case ('loading') {
+      <app-state-panel state="loading" />
+    }
+    @case ('empty') {
+      <app-state-panel
+        state="empty"
+        [country]="context.country()"
+        [otherCountryPath]="otherCountryPath()"
+        (retry)="onRetry()"
+      />
+    }
+    @case ('error') {
+      <app-state-panel state="error" [message]="store.errorMessage()" (retry)="onRetry()" />
+    }
+    @case ('ready') {
+      @if (form(); as quoteForm) {
+        <form class="step1__form" [formGroup]="quoteForm" (ngSubmit)="onSubmit()" novalidate>
+          @if (store.submitted() && store.errorCount() > 0) {
+            <p class="step1__error-summary" role="alert">{{ errorSummary() }}</p>
+          }
+
+          @for (group of groups(); track group.section) {
+            <fieldset class="step1__fieldset">
+              <legend class="step1__legend">{{ group.legend }}</legend>
+              <div class="step1__grid">
+                @for (field of group.fields; track field.key) {
+                  <app-dynamic-field
+                    [class.step1__field--wide]="field.type === 'checkbox'"
+                    [field]="field"
+                    [control]="controlFor(quoteForm, field.key)"
+                    [submitted]="store.submitted()"
+                  />
+                }
+              </div>
+            </fieldset>
+          }
+
+          <div class="step1__actions">
+            <button class="button button--primary button--large" type="submit">
+              {{ copy.continue }}
+            </button>
+          </div>
+        </form>
+      }
+    }
+  }
+</section>

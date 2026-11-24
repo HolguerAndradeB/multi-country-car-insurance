@@ -1,0 +1,74 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.field__label {
+  color: var(--color-slate-700);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.field__required {
+  color: var(--color-error);
+  margin-left: 0.15rem;
+}
+
+.field__control {
+  width: 100%;
+  min-height: 46px;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid var(--color-slate-300);
+  border-radius: 10px;
+  background: var(--color-surface);
+  color: var(--color-slate-900);
+  font: inherit;
+  font-size: 16px;
+}
+
+.field__control[aria-invalid='true'] {
+  border-color: var(--color-error);
+  background: var(--color-error-soft);
+}
+
+.field__checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 46px;
+}
+
+.field__checkbox-row input[type='checkbox'] {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--color-indigo);
+  flex: 0 0 auto;
+}
+
+.field__checkbox-label {
+  color: var(--color-slate-700);
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.field__help {
+  margin: 0;
+  color: var(--color-slate-500);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.field__error {
+  margin: 0;
+  color: var(--color-error);
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.4;
+}

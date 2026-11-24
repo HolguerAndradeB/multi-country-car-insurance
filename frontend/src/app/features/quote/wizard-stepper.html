@@ -1,0 +1,15 @@
+<nav [attr.aria-label]="copy.stepperLabel">
+  <ol class="stepper">
+    @for (step of copy.steps; track step.key) {
+      <li
+        class="stepper__item"
+        [class.stepper__item--active]="step.key === activeStep()"
+        [attr.aria-current]="step.key === activeStep() ? 'step' : null"
+      >
+        <span class="stepper__number" aria-hidden="true">{{ step.index }}</span>
+        <span class="stepper__label">{{ step.label }}</span>
+        <span class="sr-only">{{ step.srLabel }}</span>
+      </li>
+    }
+  </ol>
+</nav>

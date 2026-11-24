@@ -1,0 +1,95 @@
+<div class="field" [class.field--checkbox]="field().type === 'checkbox'">
+  @if (field().type === 'checkbox') {
+    <div class="field__checkbox-row">
+      <input
+        [id]="field().key"
+        type="checkbox"
+        [formControl]="control()"
+        [attr.aria-invalid]="isInvalid() ? 'true' : 'false'"
+        [attr.aria-describedby]="describedBy()"
+        [attr.aria-required]="field().required ? 'true' : null"
+        (blur)="onBlur()"
+      />
+      <label class="field__checkbox-label" [for]="field().key">{{ field().label }}</label>
+    </div>
+  } @else {
+    <label class="field__label" [for]="field().key">
+      {{ field().label }}
+      @if (field().required) {
+        <span class="field__required" aria-hidden="true">{{ copy.requiredMark }}</span>
+      }
+    </label>
+
+    @switch (field().type) {
+      @case ('text') {
+        <input
+          class="field__control"
+          [id]="field().key"
+          type="text"
+          [formControl]="control()"
+          [attr.autocomplete]="autocomplete()"
+          [attr.aria-invalid]="isInvalid() ? 'true' : 'false'"
+          [attr.aria-describedby]="describedBy()"
+          [attr.aria-required]="field().required ? 'true' : null"
+          spellcheck="false"
+          (blur)="onBlur()"
+        />
+      }
+      @case ('number') {
+        <input
+          class="field__control"
+          [id]="field().key"
+          type="number"
+          step="1"
+          inputmode="numeric"
+          [attr.min]="numberMin()"
+          [attr.max]="numberMax()"
+          [formControl]="control()"
+          [attr.aria-invalid]="isInvalid() ? 'true' : 'false'"
+          [attr.aria-describedby]="describedBy()"
+          [attr.aria-required]="field().required ? 'true' : null"
+          (blur)="onBlur()"
+        />
+      }
+      @case ('date') {
+        <input
+          class="field__control"
+          [id]="field().key"
+          type="date"
+          [attr.min]="field().validations.minDate ?? null"
+          [attr.max]="field().validations.maxDate ?? null"
+          [attr.autocomplete]="autocomplete()"
+          [formControl]="control()"
+          [attr.aria-invalid]="isInvalid() ? 'true' : 'false'"
+          [attr.aria-describedby]="describedBy()"
+          [attr.aria-required]="field().required ? 'true' : null"
+          (blur)="onBlur()"
+        />
+      }
+      @case ('select') {
+        <select
+          class="field__control"
+          [id]="field().key"
+          [formControl]="control()"
+          [attr.aria-invalid]="isInvalid() ? 'true' : 'false'"
+          [attr.aria-describedby]="describedBy()"
+          [attr.aria-required]="field().required ? 'true' : null"
+          (blur)="onBlur()"
+        >
+          <option value="">{{ copy.selectPlaceholder }}</option>
+          @for (option of field().options; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+      }
+    }
+  }
+
+  @if (field().helpText; as helpText) {
+    <p class="field__help" [id]="'help-' + field().key">{{ helpText }}</p>
+  }
+
+  @if (isInvalid()) {
+    <p class="field__error" [id]="'err-' + field().key" role="alert">{{ errorMessage() }}</p>
+  }
+</div>

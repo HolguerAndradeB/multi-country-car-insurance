@@ -1,0 +1,36 @@
+@switch (state()) {
+  @case ('loading') {
+    <section class="panel panel--loading" aria-busy="true" aria-live="polite">
+      <span class="sr-only">{{ copy.loading }}</span>
+      <div class="skeleton skeleton--wide"></div>
+      <div class="skeleton"></div>
+      <div class="skeleton skeleton--short"></div>
+    </section>
+  }
+  @case ('empty') {
+    <section class="panel" role="status">
+      <h1 #panelHeading tabindex="-1" class="panel__title">{{ copy.emptyTitle }}</h1>
+      <p class="panel__body">{{ copy.emptyBody }}</p>
+      <div class="panel__actions">
+        <button class="button button--primary" type="button" (click)="retry.emit()">
+          {{ copy.retry }}
+        </button>
+        <a class="button button--ghost" [href]="otherCountryPath()">{{ otherCountryLabel() }}</a>
+      </div>
+    </section>
+  }
+  @case ('error') {
+    <section class="panel panel--error" role="alert">
+      <h2 #panelHeading tabindex="-1" class="panel__title">{{ copy.errorTitle }}</h2>
+      <p class="panel__body">{{ copy.errorBody }}</p>
+      @if (showDetails && message()) {
+        <p class="panel__detail">{{ message() }}</p>
+      }
+      <div class="panel__actions">
+        <button class="button button--primary" type="button" (click)="retry.emit()">
+          {{ copy.retry }}
+        </button>
+      </div>
+    </section>
+  }
+}

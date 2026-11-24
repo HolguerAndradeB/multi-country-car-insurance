@@ -1,0 +1,11 @@
+<section class="placeholder" data-testid="plans-placeholder">
+  <app-wizard-stepper activeStep="plans" />
+
+  <div class="placeholder__card">
+    <h1 #pageHeading tabindex="-1" class="placeholder__title">{{ copy.plansHeading }}</h1>
+    <p class="placeholder__body">{{ copy.plansBody }}</p>
+    <button class="button button--primary button--large" type="button" (click)="goBack()">
+      {{ copy.backToData }}
+    </button>
+  </div>
+</section>
