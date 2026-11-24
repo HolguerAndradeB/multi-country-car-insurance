@@ -2,7 +2,7 @@
 
 **Story ID:** `US-02`
 
-**Status:** Draft (Awaiting Checkpoint 3 Human Approval)
+**Status:** Approved (Checkpoint 3 — 2026-11-23)
 
 **Date:** 2026-11-23
 
@@ -24,7 +24,7 @@
 | Predecessor spec (contract source) | [`specs/US-01-policyholder-vehicle-form.md`](./US-01-policyholder-vehicle-form.md) (Approved, Checkpoint 3 — 2026-11-23) |
 | Implemented by | `strapi-dev` (`backend/`), `angular-dev` (`frontend/`) |
 | Verified by | `tester-dev` (unit + Playwright E2E), `code-reviewer` (`docs/reviews/US-02-review.md`), human Checkpoint 4 |
-| Status | **Draft (Awaiting Checkpoint 3 Human Approval)** |
+| Status | **Approved (Checkpoint 3 — 2026-11-23)** |
 
 No new ADR is introduced by this increment. `ADR-001` §4.1 already declares the `insurance-plan` collection type and its country-filtered query; `ADR-002` §4.1 already grants Public `find`/`findOne` on `insurance-plan` (dormant until US-02); `ADR-003` §4.2 already reserves `selectedPlanDocumentId` and §4.3 already defines the "plan disappeared" restore matrix. This spec activates and makes those decisions testable — it does not amend them. All derivations below that would change an ADR are listed as Checkpoint 3 open questions in §7.4.
 
@@ -709,9 +709,16 @@ No real identity documents, plates, addresses, or personal data appear in seeds,
 
 ---
 
+### Checkpoint 3 Resolution (2026-11-23)
+
+1. **Simulated pricing formula (§2.2):** Approved — integer-only adjustment (`+2%` per vehicle year over 5 capped at `30%`, `+10%` under age 25, `+5%` age 60+, half-up integer rounding), falling back gracefully when `vehicleYear`/`birthDate` are absent, and always displaying both base price and estimated final price.
+2. **Recommended-flag policy (G1/G2):** Approved — defensive UI rendering `"Recomendado"` badge (text + non-colour border/icon) on every `recommended: true` plan, none when zero are flagged, with shared copy in `ui-copy.ts`.
+3. **Step 3 boundary (G16):** Approved — ship read-only `SummaryPlaceholderPageComponent` at `/:country/quote/summary` behind `step2CompleteGuard` with `"Continuar"` disabled until an active plan is selected.
+4. **Seed catalogue & currency display (§3, G10):** Approved — 3 active + 1 inactive fictitious plans per country with integer `COP`/`CLP` currency formatting (`maximumFractionDigits: 0`).
+
 ### Approval block (to be completed at Checkpoint 3)
 
 | Role | Name | Decision | Date |
 | --- | --- | --- | --- |
-| Human project owner (Checkpoint 3) |  | Pending | — |
+| Human project owner (Checkpoint 3) | Holguer | ☑ Approved | 2026-11-23 |
 | `spec-analyst` (author) |  | Submitted for review | 2026-11-23 |
