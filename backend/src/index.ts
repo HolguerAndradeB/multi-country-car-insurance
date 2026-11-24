@@ -18,7 +18,7 @@ export default {
    * already exists), then:
    * 1. replaces the Public role permission set with the read-only allowlist
    *    (`ADR-002`), and
-   * 2. seeds the `CO`/`CL` content idempotently (`US-01` §3).
+   * 2. seeds the `CO`/`CL` content idempotently (`US-01` §3, `US-02` §3).
    */
   async bootstrap({ strapi }: { strapi: Core.Strapi }) {
     await configurePublicRolePermissions(strapi);

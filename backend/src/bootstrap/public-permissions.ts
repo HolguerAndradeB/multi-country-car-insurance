@@ -1,10 +1,10 @@
 /**
- * Programmatic Public-role hardening (ADR-002, US-01 §4.5).
+ * Programmatic Public-role hardening (ADR-002 §4.1, US-01 §4.5, US-02 §4.4).
  *
  * The Angular application is fully anonymous and read-only: it never sends an
  * `Authorization` header and no API token exists. The only browser access path
  * is therefore the users-permissions `Public` role, which must keep exactly the
- * read-only actions listed below and nothing else.
+ * six read-only actions listed below and nothing else.
  *
  * The configuration is a full replacement, not an addition: any other
  * permission attached to `Public` (including `api::*`, `plugin::users-permissions.*`
@@ -17,6 +17,8 @@ export const PUBLIC_READ_ACTIONS = [
   'api::form-field.form-field.findOne',
   'api::country-config.country-config.find',
   'api::country-config.country-config.findOne',
+  'api::insurance-plan.insurance-plan.find',
+  'api::insurance-plan.insurance-plan.findOne',
 ] as const;
 
 interface RoleRecord {

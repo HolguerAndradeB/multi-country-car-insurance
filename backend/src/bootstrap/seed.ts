@@ -1,10 +1,12 @@
 /**
- * Idempotent bootstrap seeding for US-01.
+ * Idempotent bootstrap seeding for US-01 and US-02.
  *
- * Rules (see `.opencode/skills/strapi-multi-country/SKILL.md` §3 and
- * `specs/US-01-policyholder-vehicle-form.md` §3):
+ * Rules (see `.opencode/skills/strapi-multi-country/SKILL.md` §3,
+ * `specs/US-01-policyholder-vehicle-form.md` §3 and
+ * `specs/US-02-plan-list.md` §3):
  * - natural key for `country-config` is `country`;
  * - natural key for `form-field` is `(country, key)`;
+ * - natural key for `insurance-plan` is `(country, key)`;
  * - an entry is only created when no draft AND no published version exists,
  *   so restarting the stack never duplicates or mutates business-edited rows;
  * - new entries are published immediately (`status: 'published'`).
@@ -16,6 +18,8 @@ import {
   type CountryConfigSeed,
   formFieldSeeds,
   type FormFieldSeed,
+  insurancePlanSeeds,
+  type InsurancePlanSeed,
 } from './seed-data';
 
 type SeedStatus = 'draft' | 'published';
@@ -102,11 +106,34 @@ const seedFormFields = async (strapi: Core.Strapi): Promise<void> => {
   }
 };
 
+const seedInsurancePlans = async (strapi: Core.Strapi): Promise<void> => {
+  const documents = documentService<InsurancePlanSeed>(
+    strapi,
+    'api::insurance-plan.insurance-plan'
+  );
+
+  for (const plan of insurancePlanSeeds) {
+    const exists = await entryExists(documents, {
+      country: plan.country,
+      key: plan.key,
+    });
+
+    if (exists) {
+      continue;
+    }
+
+    await documents.create({ data: plan, status: 'published' });
+    strapi.log.info(`[bootstrap] Seeded insurance-plan ${plan.country}/${plan.key}.`);
+  }
+};
+
 export const seedContent = async (strapi: Core.Strapi): Promise<void> => {
   await seedCountryConfigs(strapi);
   await seedFormFields(strapi);
+  await seedInsurancePlans(strapi);
 
   strapi.log.info(
-    `[bootstrap] Seed verified: ${countryConfigSeeds.length} country configs and ${formFieldSeeds.length} form fields for CO/CL.`
+    `[bootstrap] Seed verified: ${countryConfigSeeds.length} country configs, ` +
+      `${formFieldSeeds.length} form fields and ${insurancePlanSeeds.length} insurance plans for CO/CL.`
   );
 };

@@ -1,5 +1,6 @@
 /**
- * Seed contract for US-01 (see `specs/US-01-policyholder-vehicle-form.md` §3).
+ * Seed contract for US-01 (`specs/US-01-policyholder-vehicle-form.md` §3) and
+ * US-02 (`specs/US-02-plan-list.md` §3).
  *
  * All copy is fictitious placeholder content in localized Spanish:
  * - `es-CO` for Colombia (`CO`)
@@ -47,6 +48,34 @@ export interface FormFieldSeed {
   readonly order: number;
   readonly country: CountryCode;
   readonly section: FormFieldSection;
+}
+
+/** Typed mirror of one entry in the Strapi `coverages` JSON blob (US-02 §5.1). */
+export interface PlanCoverageSeed {
+  readonly name: string;
+  readonly limit: number;
+  readonly deductible: number | null;
+}
+
+/**
+ * Typed mirror of an `insurance-plan` document (US-02 §4.1).
+ *
+ * `basePrice` is a numeric string because Strapi serialises `biginteger`
+ * attributes as JSON strings (e.g. `"350000"`); values stay well below
+ * `Number.MAX_SAFE_INTEGER` so the front end can coerce them with `Number()`.
+ */
+export interface InsurancePlanSeed {
+  readonly key: string;
+  readonly name: string;
+  readonly shortDescription: string;
+  readonly basePrice: string;
+  readonly currency: CurrencyCode;
+  readonly coverages: readonly PlanCoverageSeed[];
+  readonly benefits: readonly string[];
+  readonly order: number;
+  readonly recommended: boolean;
+  readonly active: boolean;
+  readonly country: CountryCode;
 }
 
 /**
@@ -385,4 +414,183 @@ const CHILE_FORM_FIELDS: readonly FormFieldSeed[] = [
 export const formFieldSeeds: readonly FormFieldSeed[] = [
   ...COLOMBIA_FORM_FIELDS,
   ...CHILE_FORM_FIELDS,
+];
+
+/** Colombia: 3 active plans (orders 1–3) + 1 inactive published plan (US-02 §3.1). */
+const COLOMBIA_INSURANCE_PLANS: readonly InsurancePlanSeed[] = [
+  {
+    key: 'basico',
+    name: 'Plan Básico',
+    shortDescription:
+      'Protección esencial para tu vehículo: daños a terceros y asistencia vial básica.',
+    basePrice: '350000',
+    currency: 'COP',
+    coverages: [
+      { name: 'Responsabilidad civil extracontractual', limit: 100000000, deductible: null },
+      { name: 'Asistencia vial', limit: 2000000, deductible: null },
+    ],
+    benefits: [
+      'Asistencia vial 24 horas',
+      'Trámite de siniestros en línea',
+      'Cobertura en todo el territorio nacional',
+    ],
+    order: 1,
+    recommended: false,
+    active: true,
+    country: 'CO',
+  },
+  {
+    key: 'estandar',
+    name: 'Plan Estándar',
+    shortDescription:
+      'Equilibrio entre cobertura y precio, con protección ante robo y daños propios.',
+    basePrice: '620000',
+    currency: 'COP',
+    coverages: [
+      { name: 'Responsabilidad civil extracontractual', limit: 200000000, deductible: null },
+      { name: 'Daños propios y robo', limit: 40000000, deductible: 1500000 },
+      { name: 'Asistencia vial', limit: 5000000, deductible: null },
+    ],
+    benefits: [
+      'Asistencia vial 24 horas',
+      'Auto reemplazo por 5 días',
+      'Descuento en talleres aliados',
+      'Reporte de siniestros desde la app',
+    ],
+    order: 2,
+    recommended: true,
+    active: true,
+    country: 'CO',
+  },
+  {
+    key: 'todo-riesgo',
+    name: 'Plan Todo Riesgo',
+    shortDescription:
+      'Máxima tranquilidad: cobertura amplia sin deducible para daños propios.',
+    basePrice: '1150000',
+    currency: 'COP',
+    coverages: [
+      { name: 'Responsabilidad civil extracontractual', limit: 400000000, deductible: null },
+      { name: 'Daños propios, robo e incendio', limit: 90000000, deductible: 0 },
+      { name: 'Asistencia vial premium', limit: 10000000, deductible: null },
+    ],
+    benefits: [
+      'Asistencia vial 24 horas sin límite de eventos',
+      'Vehículo de reemplazo por 15 días',
+      'Cobertura de cristales y espejos',
+      'Atención prioritaria de siniestros',
+    ],
+    order: 3,
+    recommended: false,
+    active: true,
+    country: 'CO',
+  },
+  {
+    key: 'basico-ahorro-inactivo',
+    name: 'Plan Básico Ahorro',
+    shortDescription:
+      'Plan de demostración retirado del catálogo: cobertura limitada a asistencia vial.',
+    basePrice: '240000',
+    currency: 'COP',
+    coverages: [{ name: 'Asistencia vial', limit: 1000000, deductible: null }],
+    benefits: ['Asistencia telefónica 24 horas'],
+    order: 4,
+    recommended: false,
+    active: false,
+    country: 'CO',
+  },
+];
+
+/** Chile: 3 active plans (orders 1–3) + 1 inactive published plan (US-02 §3.2). */
+const CHILE_INSURANCE_PLANS: readonly InsurancePlanSeed[] = [
+  {
+    key: 'basico',
+    name: 'Plan Básico',
+    shortDescription:
+      'Cobertura esencial de responsabilidad civil y asistencia en carretera.',
+    basePrice: '280000',
+    currency: 'CLP',
+    coverages: [
+      { name: 'Responsabilidad civil', limit: 60000000, deductible: null },
+      { name: 'Asistencia en carretera', limit: 1500000, deductible: null },
+    ],
+    benefits: [
+      'Asistencia en carretera 24 horas',
+      'Trámite de siniestros en línea',
+      'Cobertura en todo Chile',
+    ],
+    order: 1,
+    recommended: false,
+    active: true,
+    country: 'CL',
+  },
+  {
+    key: 'estandar',
+    name: 'Plan Estándar',
+    shortDescription:
+      'Protección equilibrada frente a robo, daños propios y asistencia ampliada.',
+    basePrice: '490000',
+    currency: 'CLP',
+    coverages: [
+      { name: 'Responsabilidad civil', limit: 120000000, deductible: null },
+      { name: 'Robo y daños propios', limit: 30000000, deductible: 1000000 },
+      { name: 'Asistencia en carretera', limit: 4000000, deductible: null },
+    ],
+    benefits: [
+      'Asistencia en carretera 24 horas',
+      'Vehículo reemplazo por 5 días',
+      'Descuento en talleres convenidos',
+      'Seguimiento de siniestro en línea',
+    ],
+    order: 2,
+    recommended: true,
+    active: true,
+    country: 'CL',
+  },
+  {
+    key: 'full',
+    name: 'Plan Full',
+    shortDescription:
+      'Cobertura completa con asistencia premium y sin deducible en daños propios.',
+    basePrice: '890000',
+    currency: 'CLP',
+    coverages: [
+      { name: 'Responsabilidad civil', limit: 250000000, deductible: null },
+      { name: 'Daños propios, robo e incendio', limit: 70000000, deductible: 0 },
+      { name: 'Asistencia en carretera premium', limit: 8000000, deductible: null },
+    ],
+    benefits: [
+      'Asistencia en carretera 24 horas sin límite de eventos',
+      'Vehículo de reemplazo por 15 días',
+      'Cobertura de vidrios y espejos',
+      'Atención prioritaria de siniestros',
+    ],
+    order: 3,
+    recommended: false,
+    active: true,
+    country: 'CL',
+  },
+  {
+    key: 'basico-economico-inactivo',
+    name: 'Plan Básico Económico',
+    shortDescription:
+      'Plan de demostración retirado del catálogo: solo asistencia en carretera.',
+    basePrice: '190000',
+    currency: 'CLP',
+    coverages: [{ name: 'Asistencia en carretera', limit: 800000, deductible: null }],
+    benefits: ['Asistencia telefónica 24 horas'],
+    order: 4,
+    recommended: false,
+    active: false,
+    country: 'CL',
+  },
+];
+
+/**
+ * 8 published `insurance-plan` records (4 per country, US-02 §3.3):
+ * 3 active + 1 inactive per country, exactly one recommended active plan each.
+ */
+export const insurancePlanSeeds: readonly InsurancePlanSeed[] = [
+  ...COLOMBIA_INSURANCE_PLANS,
+  ...CHILE_INSURANCE_PLANS,
 ];

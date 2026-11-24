@@ -1,0 +1,66 @@
+{
+  "kind": "collectionType",
+  "collectionName": "insurance_plans",
+  "info": {
+    "singularName": "insurance-plan",
+    "pluralName": "insurance-plans",
+    "displayName": "Insurance Plan"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "key": {
+      "type": "string",
+      "required": true,
+      "regex": "^[a-z][a-z0-9-]*$"
+    },
+    "name": {
+      "type": "string",
+      "required": true,
+      "maxLength": 120
+    },
+    "shortDescription": {
+      "type": "text",
+      "required": true,
+      "maxLength": 500
+    },
+    "basePrice": {
+      "type": "biginteger",
+      "required": true,
+      "min": "0"
+    },
+    "currency": {
+      "type": "enumeration",
+      "enum": ["COP", "CLP"],
+      "required": true
+    },
+    "coverages": {
+      "type": "json",
+      "required": true
+    },
+    "benefits": {
+      "type": "json",
+      "required": true
+    },
+    "order": {
+      "type": "integer",
+      "required": true,
+      "min": 1
+    },
+    "recommended": {
+      "type": "boolean",
+      "default": false
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    },
+    "country": {
+      "type": "enumeration",
+      "enum": ["CO", "CL"],
+      "required": true
+    }
+  }
+}
