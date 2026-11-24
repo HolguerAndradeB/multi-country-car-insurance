@@ -9,13 +9,13 @@ import {
 } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { CountryContextService } from '../../core/country/country-context.service';
-import { UI_COPY } from '../../core/i18n/ui-copy';
-import type { CountryCode } from '../../core/models';
-import { QuoteClock } from '../../core/pricing/quote-clock';
-import { PlanCardComponent } from './plan-card';
-import { WizardStepperComponent } from './wizard-stepper';
-import { WizardStore } from './wizard.store';
+import { CountryContextService } from '../../../../core/country/country-context.service';
+import { UI_COPY } from '../../../../core/i18n/ui-copy';
+import type { CountryCode } from '../../../../core/models';
+import { QuoteClock } from '../../../../core/pricing/quote-clock';
+import { PlanCardComponent } from './components/plan-card/plan-card';
+import { WizardStepperComponent } from '../../ui/wizard-stepper/wizard-stepper';
+import { WizardStore } from '../../state/wizard.store';
 
 @Component({
   selector: 'app-quote-step2-plans-page',

@@ -1,9 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 
-import { CountryContextService } from '../../core/country/country-context.service';
-import { UI_COPY } from '../../core/i18n/ui-copy';
-import type { QuotedPlan } from '../../core/models';
-import { formatCurrency } from '../../core/pricing/pricing.helper';
+import { CountryContextService } from '../../../../../../core/country/country-context.service';
+import { UI_COPY } from '../../../../../../core/i18n/ui-copy';
+import type { QuotedPlan } from '../../../../../../core/models';
+import { formatCurrency } from '../../../../../../core/pricing/pricing.helper';
 
 @Component({
   selector: 'app-plan-card',

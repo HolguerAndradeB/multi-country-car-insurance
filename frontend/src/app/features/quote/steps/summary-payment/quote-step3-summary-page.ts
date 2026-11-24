@@ -9,15 +9,15 @@ import {
 } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { CountryContextService } from '../../core/country/country-context.service';
-import { UI_COPY } from '../../core/i18n/ui-copy';
-import type { CountryCode, PaymentStatus } from '../../core/models';
-import { PaymentPanelComponent } from './payment-panel';
-import { QuoteConfirmationComponent } from './quote-confirmation';
-import { SummarySectionComponent } from './summary-section';
-import { TermsPanelComponent } from './terms-panel';
-import { WizardStepperComponent } from './wizard-stepper';
-import { WizardStore } from './wizard.store';
+import { CountryContextService } from '../../../../core/country/country-context.service';
+import { UI_COPY } from '../../../../core/i18n/ui-copy';
+import type { CountryCode, PaymentStatus } from '../../../../core/models';
+import { PaymentPanelComponent } from './components/payment-panel/payment-panel';
+import { QuoteConfirmationComponent } from './components/quote-confirmation/quote-confirmation';
+import { SummarySectionComponent } from './components/summary-section/summary-section';
+import { TermsPanelComponent } from './components/terms-panel/terms-panel';
+import { WizardStepperComponent } from '../../ui/wizard-stepper/wizard-stepper';
+import { WizardStore } from '../../state/wizard.store';
 
 @Component({
   selector: 'app-quote-step3-summary-page',

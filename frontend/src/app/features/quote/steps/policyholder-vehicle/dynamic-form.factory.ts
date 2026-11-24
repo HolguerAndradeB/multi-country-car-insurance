@@ -8,7 +8,7 @@ import {
   Validators,
 } from '@angular/forms';
 
-import type { FormFieldConfig, FormValue, WizardFormGroup } from '../../core/models';
+import type { FormFieldConfig, FormValue, WizardFormGroup } from '../../../../core/models';
 import {
   isLegalAge,
   isValidClRut,
@@ -16,7 +16,7 @@ import {
   normalizeClRut,
   normalizePlate,
   vehicleYearBounds,
-} from '../../core/validators/domain-validators';
+} from '../../../../core/validators/domain-validators';
 
 const DEFAULT_PLATE_PATTERNS = {
   coPlate: '^[A-Z]{3}[0-9]{3}$',

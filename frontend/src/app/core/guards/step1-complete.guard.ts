@@ -2,7 +2,7 @@ import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 
 import { COUNTRY_CATALOG_BY_CODE, toCountryCode } from '../country/country-catalog';
-import { WizardStore } from '../../features/quote/wizard.store';
+import { WizardStore } from '../../features/quote/state/wizard.store';
 
 /** US-01 placeholder guard: a deep link without a valid Step 1 returns to Step 1. */
 export const step1CompleteGuard: CanActivateFn = async (route) => {

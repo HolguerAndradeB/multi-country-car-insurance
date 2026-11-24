@@ -5,7 +5,7 @@ import { provideRouter } from '@angular/router';
 import { Observable, of, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { CatalogueApi } from '../../core/catalogue/catalogue.api';
+import { CatalogueApi } from '../../../core/catalogue/catalogue.api';
 import type {
   CountryCode,
   CountryConfig,
@@ -16,17 +16,17 @@ import type {
   QuoteConfirmation,
   SimulatedPaymentRequest,
   SimulatedPaymentResult,
-} from '../../core/models';
+} from '../../../core/models';
 import {
   SIMULATED_PAYMENT_FAILURE_HOOK,
   SimulatedPaymentService,
-} from '../../core/payment/simulated-payment.service';
-import { STORAGE_PORT, type StoragePort } from '../../core/persistence/storage.port';
+} from '../../../core/payment/simulated-payment.service';
+import { STORAGE_PORT, type StoragePort } from '../../../core/persistence/storage.port';
 import {
   wizardStorageKey,
   WizardPersistenceService,
-} from '../../core/persistence/wizard-persistence.service';
-import { QuoteClock } from '../../core/pricing/quote-clock';
+} from '../../../core/persistence/wizard-persistence.service';
+import { QuoteClock } from '../../../core/pricing/quote-clock';
 import { WizardStore } from './wizard.store';
 
 class MemoryStorage implements StoragePort {

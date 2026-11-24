@@ -1,7 +1,7 @@
 import { FormControl } from '@angular/forms';
 import { describe, expect, it } from 'vitest';
 
-import { vehicleYearValidator } from '../../features/quote/dynamic-form.factory';
+import { vehicleYearValidator } from '../../features/quote/steps/policyholder-vehicle/dynamic-form.factory';
 import {
   isLegalAge,
   isValidClRut,

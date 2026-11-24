@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
-import { UI_COPY } from '../../core/i18n/ui-copy';
-import type { WizardStep } from '../../core/models';
+import { UI_COPY } from '../../../../core/i18n/ui-copy';
+import type { WizardStep } from '../../../../core/models';
 
 @Component({
   selector: 'app-wizard-stepper',

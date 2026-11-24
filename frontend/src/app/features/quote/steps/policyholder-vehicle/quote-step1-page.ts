@@ -12,18 +12,18 @@ import {
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 
-import { CountryContextService } from '../../core/country/country-context.service';
-import { UI_COPY } from '../../core/i18n/ui-copy';
+import { CountryContextService } from '../../../../core/country/country-context.service';
+import { UI_COPY } from '../../../../core/i18n/ui-copy';
 import type {
   FormFieldConfig,
   FormFieldSection,
   FormValue,
   WizardFormGroup,
-} from '../../core/models';
-import { DynamicFieldComponent } from './dynamic-field';
-import { StatePanelComponent } from './state-panel';
-import { WizardStepperComponent } from './wizard-stepper';
-import { WizardStore } from './wizard.store';
+} from '../../../../core/models';
+import { DynamicFieldComponent } from './components/dynamic-field/dynamic-field';
+import { StatePanelComponent } from '../../ui/state-panel/state-panel';
+import { WizardStepperComponent } from '../../ui/wizard-stepper/wizard-stepper';
+import { WizardStore } from '../../state/wizard.store';
 
 interface FieldGroup {
   readonly section: FormFieldSection;

@@ -2,9 +2,9 @@ import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { TestBed } from '@angular/core/testing';
 import { describe, expect, it } from 'vitest';
 
-import type { FormFieldConfig, FormValue } from '../../core/models';
-import { UI_COPY } from '../../core/i18n/ui-copy';
-import { DynamicFieldComponent } from './dynamic-field';
+import type { FormFieldConfig, FormValue } from '../../../../core/models';
+import { UI_COPY } from '../../../../core/i18n/ui-copy';
+import { DynamicFieldComponent } from './components/dynamic-field/dynamic-field';
 import {
   DynamicFormFactory,
   clRutValidator,

@@ -13,7 +13,7 @@ import { signal } from '@angular/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { CatalogueStatus, InsurancePlan, WizardFormGroup } from '../models';
-import { WizardStore } from '../../features/quote/wizard.store';
+import { WizardStore } from '../../features/quote/state/wizard.store';
 import { step2CompleteGuard } from './step2-complete.guard';
 
 interface StoreStub {

@@ -2,9 +2,9 @@ import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { CountryContextService } from '../../core/country/country-context.service';
-import { UI_COPY } from '../../core/i18n/ui-copy';
-import type { InsurancePlan, QuotedPlan } from '../../core/models';
+import { CountryContextService } from '../../../../../../core/country/country-context.service';
+import { UI_COPY } from '../../../../../../core/i18n/ui-copy';
+import type { InsurancePlan, QuotedPlan } from '../../../../../../core/models';
 import { PlanCardComponent } from './plan-card';
 
 function plan(overrides: Partial<InsurancePlan> = {}): InsurancePlan {

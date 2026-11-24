@@ -2,7 +2,7 @@ import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 
 import { COUNTRY_CATALOG_BY_CODE, toCountryCode } from '../country/country-catalog';
-import { WizardStore } from '../../features/quote/wizard.store';
+import { WizardStore } from '../../features/quote/state/wizard.store';
 
 /**
  * US-02/US-03: Step 3 requires a valid Step 1 and an active selected plan.

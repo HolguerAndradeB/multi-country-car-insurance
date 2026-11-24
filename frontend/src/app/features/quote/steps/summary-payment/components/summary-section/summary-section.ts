@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
-import type { SummarySection } from '../../core/models';
+import type { SummarySection } from '../../../../../../core/models';
 
 @Component({
   selector: 'app-summary-section',

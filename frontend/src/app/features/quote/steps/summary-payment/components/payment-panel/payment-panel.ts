@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
-import { UI_COPY } from '../../core/i18n/ui-copy';
-import type { PaymentStatus, PlanSummary } from '../../core/models';
+import { UI_COPY } from '../../../../../../core/i18n/ui-copy';
+import type { PaymentStatus, PlanSummary } from '../../../../../../core/models';
 
 @Component({
   selector: 'app-payment-panel',

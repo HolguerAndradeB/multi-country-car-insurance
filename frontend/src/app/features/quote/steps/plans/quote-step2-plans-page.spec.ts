@@ -4,15 +4,15 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { CountryContextService } from '../../core/country/country-context.service';
-import { UI_COPY } from '../../core/i18n/ui-copy';
+import { CountryContextService } from '../../../../core/country/country-context.service';
+import { UI_COPY } from '../../../../core/i18n/ui-copy';
 import type {
   CatalogueStatus,
   InsurancePlan,
   QuotedPlan,
-} from '../../core/models';
-import { QuoteClock } from '../../core/pricing/quote-clock';
-import { WizardStore } from './wizard.store';
+} from '../../../../core/models';
+import { QuoteClock } from '../../../../core/pricing/quote-clock';
+import { WizardStore } from '../../state/wizard.store';
 import { QuoteStep2PlansPageComponent } from './quote-step2-plans-page';
 
 interface StoreStub {

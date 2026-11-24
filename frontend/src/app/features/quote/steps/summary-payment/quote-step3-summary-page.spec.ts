@@ -4,8 +4,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { CountryContextService } from '../../core/country/country-context.service';
-import { UI_COPY } from '../../core/i18n/ui-copy';
+import { CountryContextService } from '../../../../core/country/country-context.service';
+import { UI_COPY } from '../../../../core/i18n/ui-copy';
 import type {
   CountryCode,
   CountryConfig,
@@ -14,9 +14,9 @@ import type {
   QuoteConfirmation,
   SummaryLoadStatus,
   SummarySection,
-} from '../../core/models';
+} from '../../../../core/models';
 import { QuoteStep3SummaryPageComponent } from './quote-step3-summary-page';
-import { WizardStore } from './wizard.store';
+import { WizardStore } from '../../state/wizard.store';
 
 interface StoreStub {
   readonly summaryStatus: WritableSignal<SummaryLoadStatus>;

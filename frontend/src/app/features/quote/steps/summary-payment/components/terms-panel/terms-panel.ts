@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
-import { UI_COPY } from '../../core/i18n/ui-copy';
+import { UI_COPY } from '../../../../../../core/i18n/ui-copy';
 
 @Component({
   selector: 'app-terms-panel',

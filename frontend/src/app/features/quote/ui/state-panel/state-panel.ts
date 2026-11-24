@@ -9,8 +9,8 @@ import {
   viewChild,
 } from '@angular/core';
 
-import { UI_COPY } from '../../core/i18n/ui-copy';
-import type { CountryCode } from '../../core/models';
+import { UI_COPY } from '../../../../core/i18n/ui-copy';
+import type { CountryCode } from '../../../../core/models';
 
 type PanelState = 'loading' | 'empty' | 'error';
 

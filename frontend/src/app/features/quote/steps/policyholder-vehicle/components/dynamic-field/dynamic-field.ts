@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
-import { UI_COPY } from '../../core/i18n/ui-copy';
-import type { FormFieldConfig, FormValue } from '../../core/models';
-import { vehicleYearBounds } from '../../core/validators/domain-validators';
-import { normalizeFieldValue } from './dynamic-form.factory';
+import { UI_COPY } from '../../../../../../core/i18n/ui-copy';
+import type { FormFieldConfig, FormValue } from '../../../../../../core/models';
+import { vehicleYearBounds } from '../../../../../../core/validators/domain-validators';
+import { normalizeFieldValue } from '../../dynamic-form.factory';
 
 @Component({
   selector: 'app-dynamic-field',

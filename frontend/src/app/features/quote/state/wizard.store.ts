@@ -2,9 +2,9 @@ import { DestroyRef, Injectable, inject, isDevMode, signal, computed } from '@an
 import { HttpErrorResponse } from '@angular/common/http';
 import { Subscription, debounceTime, firstValueFrom, forkJoin } from 'rxjs';
 
-import { CatalogueApi } from '../../core/catalogue/catalogue.api';
-import { CountryContextService } from '../../core/country/country-context.service';
-import { UI_COPY } from '../../core/i18n/ui-copy';
+import { CatalogueApi } from '../../../core/catalogue/catalogue.api';
+import { CountryContextService } from '../../../core/country/country-context.service';
+import { UI_COPY } from '../../../core/i18n/ui-copy';
 import type {
   CatalogueStatus,
   CountryCode,
@@ -23,20 +23,20 @@ import type {
   SummarySection,
   WizardFormGroup,
   WizardStep,
-} from '../../core/models';
+} from '../../../core/models';
 import {
   SIMULATED_PAYMENT_FAILURE_HOOK,
   SimulatedPaymentService,
-} from '../../core/payment/simulated-payment.service';
-import { WizardPersistenceService } from '../../core/persistence/wizard-persistence.service';
-import { calculateAdjustedPrice, formatCurrency, pickKeys } from '../../core/pricing/pricing.helper';
-import { QuoteClock } from '../../core/pricing/quote-clock';
+} from '../../../core/payment/simulated-payment.service';
+import { WizardPersistenceService } from '../../../core/persistence/wizard-persistence.service';
+import { calculateAdjustedPrice, formatCurrency, pickKeys } from '../../../core/pricing/pricing.helper';
+import { QuoteClock } from '../../../core/pricing/quote-clock';
 import {
   buildPlanSummary,
   buildQuoteNumber,
   buildSummarySections,
-} from '../../core/summary/summary.helper';
-import { DynamicFormFactory, coerceDraftValue } from './dynamic-form.factory';
+} from '../../../core/summary/summary.helper';
+import { DynamicFormFactory, coerceDraftValue } from '../steps/policyholder-vehicle/dynamic-form.factory';
 
 @Injectable({ providedIn: 'root' })
 export class WizardStore {

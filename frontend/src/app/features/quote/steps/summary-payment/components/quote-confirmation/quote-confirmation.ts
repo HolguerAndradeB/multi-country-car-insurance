@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 
-import { UI_COPY } from '../../core/i18n/ui-copy';
-import type { QuoteConfirmation, SummaryRow } from '../../core/models';
+import { UI_COPY } from '../../../../../../core/i18n/ui-copy';
+import type { QuoteConfirmation, SummaryRow } from '../../../../../../core/models';
 
 @Component({
   selector: 'app-quote-confirmation',
