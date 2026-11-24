@@ -115,7 +115,7 @@ All rows are created by the idempotent bootstrap in `backend/src/index.ts` with 
 | `country` | `"CO"` | `"CL"` |
 | `countryName` | `"Colombia"` | `"Chile"` |
 | `currency` | `"COP"` | `"CLP"` |
-| `locale` | `"es-CO"` | `"es-CL"` |
+| `localeCode` | `"es-CO"` | `"es-CL"` |
 | `documentMaskVisibleEnd` | `4` | `4` |
 | `termsAndConditions` | Placeholder (see below) | Placeholder (see below) |
 
@@ -202,7 +202,7 @@ Options: `draftAndPublish: true`; no relations, no media, no i18n, no components
 | `country` | `enumeration` (`CO \| CL`) | **required, unique** (one config per market) |
 | `countryName` | `string` | required |
 | `currency` | `enumeration` (`COP \| CLP`) | required |
-| `locale` | `string` | required, matches `es-CO` / `es-CL` |
+| `localeCode` | `string` | required, matches `es-CO` / `es-CL` (`locale` is reserved by Strapi 5) |
 | `termsAndConditions` | `text` (long text) | required (US-03 consumes it verbatim) |
 | `documentMaskVisibleEnd` | `integer` | default `4`, `>= 0` |
 
@@ -295,7 +295,7 @@ Rules:
       "country": "CL",
       "countryName": "Chile",
       "currency": "CLP",
-      "locale": "es-CL",
+      "localeCode": "es-CL",
       "termsAndConditions": "TÉRMINOS Y CONDICIONES — TEXTO DE DEMOSTRACIÓN (PENDIENTE DE APROBACIÓN LEGAL)…",
       "documentMaskVisibleEnd": 4,
       "createdAt": "2026-11-23T10:00:00.000Z",
@@ -402,7 +402,7 @@ export interface CountryConfig {
   readonly country: CountryCode;
   readonly countryName: string;
   readonly currency: CurrencyCode;
-  readonly locale: AppLocale;
+  readonly localeCode: AppLocale;
   readonly termsAndConditions: string;
   readonly documentMaskVisibleEnd: number;
 }
@@ -446,7 +446,7 @@ export interface CountryConfigDto {
   readonly country: CountryCode;
   readonly countryName: string;
   readonly currency: CurrencyCode;
-  readonly locale: string;
+  readonly localeCode: string;
   readonly termsAndConditions: string;
   readonly documentMaskVisibleEnd: number | null;
 }

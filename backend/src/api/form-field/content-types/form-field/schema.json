@@ -1,0 +1,64 @@
+{
+  "kind": "collectionType",
+  "collectionName": "form_fields",
+  "info": {
+    "singularName": "form-field",
+    "pluralName": "form-fields",
+    "displayName": "Form Field"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "key": {
+      "type": "string",
+      "required": true,
+      "regex": "^[a-zA-Z][a-zA-Z0-9]*$"
+    },
+    "label": {
+      "type": "string",
+      "required": true,
+      "maxLength": 120
+    },
+    "type": {
+      "type": "enumeration",
+      "enum": ["text", "number", "select", "date", "checkbox"],
+      "required": true
+    },
+    "required": {
+      "type": "boolean",
+      "default": false
+    },
+    "validations": {
+      "type": "json"
+    },
+    "options": {
+      "type": "json"
+    },
+    "helpText": {
+      "type": "string",
+      "maxLength": 240
+    },
+    "errorMessage": {
+      "type": "string",
+      "maxLength": 240
+    },
+    "order": {
+      "type": "integer",
+      "required": true,
+      "min": 1
+    },
+    "country": {
+      "type": "enumeration",
+      "enum": ["CO", "CL"],
+      "required": true
+    },
+    "section": {
+      "type": "enumeration",
+      "enum": ["policyholder", "vehicle"],
+      "required": true,
+      "default": "policyholder"
+    }
+  }
+}

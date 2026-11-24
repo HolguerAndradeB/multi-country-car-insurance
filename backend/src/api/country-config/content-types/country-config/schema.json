@@ -1,0 +1,43 @@
+{
+  "kind": "collectionType",
+  "collectionName": "country_configs",
+  "info": {
+    "singularName": "country-config",
+    "pluralName": "country-configs",
+    "displayName": "Country Config"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "country": {
+      "type": "enumeration",
+      "enum": ["CO", "CL"],
+      "required": true,
+      "unique": true
+    },
+    "countryName": {
+      "type": "string",
+      "required": true
+    },
+    "currency": {
+      "type": "enumeration",
+      "enum": ["COP", "CLP"],
+      "required": true
+    },
+    "localeCode": {
+      "type": "string",
+      "required": true
+    },
+    "termsAndConditions": {
+      "type": "text",
+      "required": true
+    },
+    "documentMaskVisibleEnd": {
+      "type": "integer",
+      "default": 4,
+      "min": 0
+    }
+  }
+}

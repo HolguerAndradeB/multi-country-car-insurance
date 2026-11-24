@@ -69,7 +69,7 @@ All business-configurable items are scoped by a `country` enumeration (`CO`, `CL
      - `country` (`enumeration`: `CO | CL`, unique, required)
      - `countryName` (`string`, required)
      - `currency` (`enumeration`: `COP | CLP`, required)
-     - `locale` (`string`, required: `es-CO` / `es-CL`)
+     - `localeCode` (`string`, required: `es-CO` / `es-CL`; avoid `locale` as it is reserved in Strapi 5)
      - `termsAndConditions` (`richtext` or `text`, required)
      - `documentMaskVisibleEnd` (`integer`, default `4`)
 
