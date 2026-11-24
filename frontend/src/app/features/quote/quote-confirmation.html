@@ -1,0 +1,49 @@
+<section
+  class="confirmation"
+  role="status"
+  aria-live="polite"
+  [attr.aria-labelledby]="confirmationHeadingId"
+  data-testid="quote-confirmation"
+>
+  <h2 class="confirmation__heading" [id]="confirmationHeadingId">{{ copy.confirmationHeading }}</h2>
+  <p class="confirmation__body">{{ copy.confirmationBody }}</p>
+
+  <dl class="confirmation__list">
+    <div class="confirmation__row">
+      <dt>{{ copy.quoteNumberLabel }}</dt>
+      <dd>
+        <data class="confirmation__quote" [attr.value]="confirmation().quoteNumber">{{
+          confirmation().quoteNumber
+        }}</data>
+      </dd>
+    </div>
+
+    @if (documentRow(); as document) {
+      <div class="confirmation__row">
+        <dt>{{ document.label }}</dt>
+        <dd>{{ document.value }}</dd>
+      </div>
+    }
+
+    <div class="confirmation__row">
+      <dt>{{ copy.summaryPlanHeading }}</dt>
+      <dd>{{ confirmation().planName }}</dd>
+    </div>
+
+    <div class="confirmation__row">
+      <dt>{{ copy.finalPriceLabel }}</dt>
+      <dd>{{ confirmation().formattedFinalPrice }}</dd>
+    </div>
+
+    <div class="confirmation__row">
+      <dt>{{ copy.issuedAtLabel }}</dt>
+      <dd>
+        <time [attr.datetime]="confirmation().issuedAt">{{ issuedAtText() }}</time>
+      </dd>
+    </div>
+  </dl>
+
+  <button class="button button--primary button--large confirmation__action" type="button" (click)="newQuote.emit()">
+    {{ copy.newQuote }}
+  </button>
+</section>

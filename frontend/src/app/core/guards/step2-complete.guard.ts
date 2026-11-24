@@ -4,7 +4,11 @@ import { CanActivateFn, Router } from '@angular/router';
 import { COUNTRY_CATALOG_BY_CODE, toCountryCode } from '../country/country-catalog';
 import { WizardStore } from '../../features/quote/wizard.store';
 
-/** US-02: Step 3 requires a valid Step 1 and an active selected plan. */
+/**
+ * US-02/US-03: Step 3 requires a valid Step 1 and an active selected plan.
+ * On a cold reload the plan catalogue is not fetched by the Step 1 loader, so a
+ * persisted selection is resolved here before deciding to bounce back to plans.
+ */
 export const step2CompleteGuard: CanActivateFn = async (route) => {
   const store = inject(WizardStore);
   const router = inject(Router);
@@ -19,6 +23,15 @@ export const step2CompleteGuard: CanActivateFn = async (route) => {
   }
 
   if (store.selectedPlan() === null) {
+    const persistedPlanId = store.selectedPlanDocumentId?.() ?? null;
+    if (persistedPlanId !== null) {
+      if (store.plansStatus?.() !== 'ready') {
+        await store.loadPlans(country);
+      }
+      if (store.selectedPlan() !== null) {
+        return true;
+      }
+    }
     return router.createUrlTree([`/${segment}/quote/plans`]);
   }
 

@@ -46,8 +46,11 @@
 }
 
 @media (min-width: 1280px) {
-  .app-header__inner,
-  .app-main {
+  .app-header__inner {
     max-width: 1040px;
+  }
+
+  .app-main {
+    max-width: 1152px;
   }
 }

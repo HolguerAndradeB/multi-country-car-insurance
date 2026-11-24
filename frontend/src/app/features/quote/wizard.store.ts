@@ -4,6 +4,7 @@ import { Subscription, debounceTime, firstValueFrom, forkJoin } from 'rxjs';
 
 import { CatalogueApi } from '../../core/catalogue/catalogue.api';
 import { CountryContextService } from '../../core/country/country-context.service';
+import { UI_COPY } from '../../core/i18n/ui-copy';
 import type {
   CatalogueStatus,
   CountryCode,
@@ -11,14 +12,30 @@ import type {
   FormFieldConfig,
   FormValue,
   InsurancePlan,
+  PaymentStatus,
   PersistedWizardStateV1,
+  PlanSummary,
+  QuoteConfirmation,
   QuotedPlan,
+  SimulatedPaymentRequest,
+  SummaryLoadStatus,
+  SummaryRow,
+  SummarySection,
   WizardFormGroup,
   WizardStep,
 } from '../../core/models';
+import {
+  SIMULATED_PAYMENT_FAILURE_HOOK,
+  SimulatedPaymentService,
+} from '../../core/payment/simulated-payment.service';
 import { WizardPersistenceService } from '../../core/persistence/wizard-persistence.service';
 import { calculateAdjustedPrice, formatCurrency, pickKeys } from '../../core/pricing/pricing.helper';
 import { QuoteClock } from '../../core/pricing/quote-clock';
+import {
+  buildPlanSummary,
+  buildQuoteNumber,
+  buildSummarySections,
+} from '../../core/summary/summary.helper';
 import { DynamicFormFactory, coerceDraftValue } from './dynamic-form.factory';
 
 @Injectable({ providedIn: 'root' })
@@ -29,6 +46,8 @@ export class WizardStore {
   private readonly factory = inject(DynamicFormFactory);
   private readonly destroyRef = inject(DestroyRef);
   private readonly injectedClock = inject(QuoteClock);
+  private readonly payment = inject(SimulatedPaymentService);
+  private readonly failureHook = inject(SIMULATED_PAYMENT_FAILURE_HOOK);
 
   private readonly fieldsSignal = signal<readonly FormFieldConfig[]>([]);
   private readonly configSignal = signal<CountryConfig | null>(null);
@@ -49,6 +68,13 @@ export class WizardStore {
   private readonly restoredSelectionFromDraftSignal = signal(false);
   private readonly quoteClockSignal = signal<QuoteClock | null>(null);
 
+  private readonly summaryStatusSignal = signal<SummaryLoadStatus>('idle');
+  private readonly summaryErrorSignal = signal<string | null>(null);
+  private readonly summaryConfigSignal = signal<CountryConfig | null>(null);
+  private readonly termsAcceptedSignal = signal(false);
+  private readonly paymentStatusSignal = signal<PaymentStatus>('idle');
+  private readonly confirmationSignal = signal<QuoteConfirmation | null>(null);
+
   private changes: Subscription | null = null;
   private activeLoad: { readonly country: CountryCode; readonly promise: Promise<void> } | null = null;
 
@@ -65,6 +91,12 @@ export class WizardStore {
   readonly plansError = this.plansErrorSignal.asReadonly();
   readonly invalidSelectionNotice = this.invalidSelectionNoticeSignal.asReadonly();
   readonly restoredSelectionNotice = this.restoredSelectionNoticeSignal.asReadonly();
+  readonly summaryStatus = this.summaryStatusSignal.asReadonly();
+  readonly summaryError = this.summaryErrorSignal.asReadonly();
+  readonly summaryConfig = this.summaryConfigSignal.asReadonly();
+  readonly termsAccepted = this.termsAcceptedSignal.asReadonly();
+  readonly paymentStatus = this.paymentStatusSignal.asReadonly();
+  readonly confirmation = this.confirmationSignal.asReadonly();
 
   /** Recomputed on every form value/status change so Step 2 pricing never goes stale. */
   readonly step1Values = computed<Readonly<Record<string, FormValue>>>(() => {
@@ -117,6 +149,39 @@ export class WizardStore {
 
   readonly isReady = computed<boolean>(() => this.statusSignal() === 'ready' && this.formSignal() !== null);
 
+  readonly termsAvailable = computed<boolean>(() => {
+    const config = this.summaryConfig();
+    return config !== null && config.termsAndConditions.trim().length > 0;
+  });
+
+  readonly canPay = computed<boolean>(
+    () =>
+      this.summaryStatus() === 'ready' &&
+      this.termsAvailable() &&
+      this.termsAccepted() &&
+      (this.paymentStatus() === 'idle' || this.paymentStatus() === 'rejected'),
+  );
+
+  readonly summarySections = computed<readonly SummarySection[]>(() =>
+    buildSummarySections(
+      this.fields(),
+      this.step1Values(),
+      this.summaryConfig()?.documentMaskVisibleEnd ?? 4,
+      UI_COPY.yes,
+      UI_COPY.no,
+      UI_COPY.blankPlaceholder,
+    ),
+  );
+
+  readonly planSummary = computed<PlanSummary | null>(() => {
+    const selected = this.selectedPlan();
+    if (selected === null) {
+      return null;
+    }
+    const quoted = this.quotedPlans().find((entry) => entry.plan.documentId === selected.documentId);
+    return quoted ? buildPlanSummary(quoted, UI_COPY) : null;
+  });
+
   readonly errorCount = computed<number>(() => {
     this.formRevision();
     const form = this.formSignal();
@@ -168,6 +233,77 @@ export class WizardStore {
 
   retryPlans(): Promise<void> {
     return this.loadPlans(this.activeCountrySignal() ?? this.context.country());
+  }
+
+  /**
+   * US-03: always re-reads the live country config. Also hydrates the Step 1
+   * catalogue and the plan catalogue when a direct reload lands on Step 3.
+   */
+  async loadSummaryContext(country: CountryCode): Promise<void> {
+    this.clearStep3State();
+    if (!this.isLoadedFor(country)) {
+      await this.load(country);
+    }
+    this.summaryStatusSignal.set('loading');
+    this.summaryErrorSignal.set(null);
+
+    try {
+      if (!this.isLoadedFor(country)) {
+        throw new Error('Step 1 catalogue is not ready.');
+      }
+
+      if (this.plansStatus() !== 'ready' || this.activeCountrySignal() !== country) {
+        await this.loadPlans(country);
+      }
+      if (this.plansStatus() === 'error') {
+        throw new Error(this.plansError() ?? 'Plan catalogue unavailable.');
+      }
+      if (this.selectedPlanDocumentId() !== null && this.selectedPlan() === null) {
+        this.normalizeSelection(this.plansSignal(), country);
+      }
+      if (this.selectedPlan() === null) {
+        throw new Error('Selected plan is unavailable.');
+      }
+
+      const config = await firstValueFrom(this.catalogue.getCountryConfig(country));
+      if (config === null || config.termsAndConditions.trim().length === 0) {
+        this.summaryConfigSignal.set(config ?? null);
+        this.summaryStatusSignal.set('empty-terms');
+        return;
+      }
+
+      this.summaryConfigSignal.set(config);
+      this.summaryStatusSignal.set('ready');
+    } catch (error: unknown) {
+      this.summaryErrorSignal.set(this.describeError(error));
+      this.summaryStatusSignal.set('error');
+    }
+  }
+
+  retrySummary(country: CountryCode): Promise<void> {
+    return this.loadSummaryContext(country);
+  }
+
+  setTermsAccepted(accepted: boolean): void {
+    this.termsAcceptedSignal.set(accepted);
+  }
+
+  /** Synchronous check-and-set lock; no await may precede the LOCK line. */
+  submitPayment(): void {
+    if (this.paymentStatus() === 'processing' || this.paymentStatus() === 'confirmed') {
+      return;
+    }
+    if (!this.canPay()) {
+      return;
+    }
+
+    const request = this.buildPaymentRequest();
+    this.paymentStatusSignal.set('processing');
+    void this.finishPayment(request);
+  }
+
+  newQuote(country: CountryCode): void {
+    this.reset(country);
   }
 
   selectPlan(documentId: string | null): void {
@@ -249,6 +385,7 @@ export class WizardStore {
     this.selectedPlanSignal.set(null);
     this.formRevision.set(0);
     this.clearPlanState();
+    this.clearStep3State();
   }
 
   private async startLoad(country: CountryCode): Promise<void> {
@@ -260,6 +397,7 @@ export class WizardStore {
     this.submittedSignal.set(false);
     this.restoredSignal.set(false);
     this.clearPlanState();
+    this.clearStep3State();
 
     try {
       const { fields, config } = await firstValueFrom(
@@ -353,6 +491,82 @@ export class WizardStore {
     this.quoteClockSignal.set(null);
   }
 
+  private buildPaymentRequest(): SimulatedPaymentRequest {
+    const config = this.summaryConfig();
+    const country = config?.country ?? this.context.country();
+    return {
+      country,
+      locale: config?.localeCode ?? this.context.locale(),
+      planDocumentId: this.selectedPlanDocumentId() ?? '',
+      termsDocumentId: config?.documentId ?? '',
+      shouldFail: this.failureHook(),
+    };
+  }
+
+  private async finishPayment(request: SimulatedPaymentRequest): Promise<void> {
+    try {
+      const result = await this.payment.pay(request);
+      if (!result.ok) {
+        this.paymentStatusSignal.set('rejected');
+        return;
+      }
+
+      this.confirmationSignal.set(this.buildConfirmation(request));
+      this.paymentStatusSignal.set('confirmed');
+    } catch {
+      this.paymentStatusSignal.set('rejected');
+    }
+  }
+
+  private buildConfirmation(request: SimulatedPaymentRequest): QuoteConfirmation {
+    const config = this.summaryConfig();
+    const plan = this.planSummary();
+    const selected = this.selectedPlan();
+    const quoted =
+      selected === null
+        ? null
+        : (this.quotedPlans().find((entry) => entry.plan.documentId === selected.documentId) ?? null);
+    const sections = this.summarySections();
+    const clock = this.quoteClockSignal() ?? this.injectedClock;
+    const policyholder = sections.find((section) => section.id === 'policyholder')?.rows ?? [];
+    const vehicle = sections.find((section) => section.id === 'vehicle')?.rows ?? [];
+
+    const payload: Record<string, string> = {};
+    for (const row of policyholder) {
+      payload[`policyholder.${row.key}`] = row.value;
+    }
+    for (const row of vehicle) {
+      payload[`vehicle.${row.key}`] = row.value;
+    }
+    payload['planDocumentId'] = request.planDocumentId;
+    payload['termsDocumentId'] = request.termsDocumentId;
+    payload['locale'] = request.locale;
+
+    const confirmation: QuoteConfirmation = Object.freeze({
+      quoteNumber: buildQuoteNumber(request.country, payload, clock),
+      country: request.country,
+      locale: request.locale,
+      currency: config?.currency ?? this.context.currency(),
+      issuedAt: clock.today.toISOString(),
+      policyholder: freezeRows(policyholder),
+      vehicle: freezeRows(vehicle),
+      planName: plan?.name ?? '',
+      finalPrice: plan?.finalPrice ?? 0,
+      formattedFinalPrice: quoted?.formattedFinalPrice ?? '',
+      termsDocumentId: request.termsDocumentId,
+    });
+    return confirmation;
+  }
+
+  private clearStep3State(): void {
+    this.summaryStatusSignal.set('idle');
+    this.summaryErrorSignal.set(null);
+    this.summaryConfigSignal.set(null);
+    this.termsAcceptedSignal.set(false);
+    this.paymentStatusSignal.set('idle');
+    this.confirmationSignal.set(null);
+  }
+
   private describeError(error: unknown): string | null {
     if (!isDevMode()) {
       return null;
@@ -362,4 +576,9 @@ export class WizardStore {
     }
     return error instanceof Error ? error.message : null;
   }
+}
+
+/** Deep-freeze the display rows so the confirmation snapshot cannot mutate. */
+function freezeRows(rows: readonly SummaryRow[]): readonly SummaryRow[] {
+  return Object.freeze(rows.map((row) => Object.freeze({ ...row })));
 }

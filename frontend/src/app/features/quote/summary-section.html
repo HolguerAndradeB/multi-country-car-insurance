@@ -1,0 +1,11 @@
+<section class="summary-section" [attr.aria-labelledby]="headingId()" data-testid="summary-section">
+  <h2 class="summary-section__heading" [id]="headingId()">{{ section().heading }}</h2>
+  <dl class="summary-section__list">
+    @for (row of section().rows; track row.key) {
+      <div class="summary-section__row">
+        <dt class="summary-section__label">{{ row.label }}</dt>
+        <dd class="summary-section__value">{{ row.value }}</dd>
+      </div>
+    }
+  </dl>
+</section>

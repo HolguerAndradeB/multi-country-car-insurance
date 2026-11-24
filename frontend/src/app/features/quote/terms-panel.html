@@ -1,0 +1,22 @@
+<section
+  class="terms"
+  tabindex="0"
+  role="region"
+  [attr.aria-labelledby]="headingId"
+  data-testid="terms-region"
+>
+  <h2 class="terms__heading" [id]="headingId">{{ copy.termsHeading }}</h2>
+  <p class="terms__text">{{ terms() }}</p>
+</section>
+
+<div class="terms__accept">
+  <input
+    class="terms__checkbox"
+    type="checkbox"
+    id="terms-accepted"
+    [checked]="accepted()"
+    [attr.aria-describedby]="headingId"
+    (change)="onToggle($event)"
+  />
+  <label class="terms__label" for="terms-accepted">{{ copy.termsAcceptLabel }}</label>
+</div>

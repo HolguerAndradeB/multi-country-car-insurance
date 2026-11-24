@@ -18,8 +18,8 @@ export const routes: Routes = [
     path: ':country/quote/summary',
     canActivate: [countryRouteGuard, step2CompleteGuard],
     loadComponent: () =>
-      import('./features/quote/summary-placeholder-page').then(
-        (module) => module.SummaryPlaceholderPageComponent,
+      import('./features/quote/quote-step3-summary-page').then(
+        (module) => module.QuoteStep3SummaryPageComponent,
       ),
   },
   {

@@ -1,0 +1,80 @@
+<section class="summary-page" data-testid="summary-page">
+  <app-wizard-stepper activeStep="summary" />
+
+  <h1 #pageHeading tabindex="-1" class="summary-page__title">{{ copy.summaryHeading }}</h1>
+
+  @if (store.summaryStatus() === 'idle' || store.summaryStatus() === 'loading') {
+    <section class="summary-page__loading" aria-busy="true" aria-live="polite" data-testid="summary-loading">
+      <span class="sr-only">{{ copy.summaryLoading }}</span>
+      <div class="skeleton skeleton--tall" aria-hidden="true"></div>
+      <div class="skeleton skeleton--tall" aria-hidden="true"></div>
+      <div class="skeleton" aria-hidden="true"></div>
+    </section>
+  } @else {
+    @switch (store.summaryStatus()) {
+      @case ('error') {
+        <section class="summary-page__panel summary-page__panel--error" role="alert" data-testid="summary-error">
+          <h2 class="summary-page__panel-title">{{ copy.summaryErrorTitle }}</h2>
+          <p class="summary-page__panel-body">{{ copy.summaryErrorBody }}</p>
+          @if (store.summaryError()) {
+            <p class="summary-page__panel-detail">{{ store.summaryError() }}</p>
+          }
+          <div class="summary-page__actions">
+            <button class="button button--primary" type="button" (click)="onRetrySummary()">
+              {{ copy.retry }}
+            </button>
+            <button class="button button--ghost" type="button" (click)="onBackToPlans()">
+              {{ copy.backToPlans }}
+            </button>
+          </div>
+        </section>
+      }
+      @case ('empty-terms') {
+        <section class="summary-page__panel summary-page__panel--error" role="alert" data-testid="summary-empty-terms">
+          <h2 class="summary-page__panel-title">{{ copy.termsUnavailable }}</h2>
+          <div class="summary-page__actions">
+            <button class="button button--primary" type="button" (click)="onRetrySummary()">
+              {{ copy.retry }}
+            </button>
+            <button class="button button--ghost" type="button" (click)="onBackToPlans()">
+              {{ copy.backToPlans }}
+            </button>
+          </div>
+        </section>
+      }
+      @case ('ready') {
+        @if (store.paymentStatus() === 'confirmed') {
+          @if (store.confirmation(); as confirmation) {
+            <app-quote-confirmation [confirmation]="confirmation" (newQuote)="onNewQuote()" />
+          }
+        } @else {
+          @if (store.summaryConfig(); as config) {
+            <div class="summary-page__sections" data-testid="summary-sections">
+              @for (section of store.summarySections(); track section.id) {
+                <app-summary-section [section]="section" />
+              }
+            </div>
+
+            <app-terms-panel
+              [terms]="config.termsAndConditions"
+              [accepted]="store.termsAccepted()"
+              (acceptedChange)="onAccepted($event)"
+            />
+
+            @if (store.planSummary(); as plan) {
+              <app-payment-panel
+                [plan]="plan"
+                [canPay]="store.canPay()"
+                [paymentStatus]="store.paymentStatus()"
+                (pay)="onPay()"
+                (retry)="onRetryPayment()"
+                (editData)="onEditData()"
+                (changePlan)="onChangePlan()"
+              />
+            }
+          }
+        }
+      }
+    }
+  }
+</section>

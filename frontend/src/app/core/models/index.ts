@@ -36,3 +36,14 @@ export type {
   WizardPersistence,
   WizardStep,
 } from './wizard.models';
+export type {
+  PaymentStatus,
+  PlanSummary,
+  PlanSummaryCopy,
+  QuoteConfirmation,
+  SimulatedPaymentRequest,
+  SimulatedPaymentResult,
+  SummaryLoadStatus,
+  SummaryRow,
+  SummarySection,
+} from './summary.models';

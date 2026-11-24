@@ -1,0 +1,121 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.summary-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  width: 100%;
+  max-width: 1120px;
+  min-width: 0;
+  margin: 0 auto;
+}
+
+.summary-page__title {
+  margin: 0;
+  color: var(--color-slate-900);
+  font-size: 1.8rem;
+  line-height: 1.2;
+}
+
+.summary-page__loading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  padding: 1.25rem;
+  border: 1px solid var(--color-slate-200);
+  border-radius: 16px;
+  background: var(--color-surface);
+}
+
+.skeleton {
+  height: 90px;
+  border-radius: 12px;
+  background: linear-gradient(
+    90deg,
+    var(--color-slate-100) 0%,
+    var(--color-slate-200) 50%,
+    var(--color-slate-100) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+.skeleton--tall {
+  height: 132px;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.summary-page__panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  padding: 1.5rem;
+  border: 1px solid var(--color-slate-200);
+  border-radius: 16px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+}
+
+.summary-page__panel--error {
+  border-color: var(--color-error);
+}
+
+.summary-page__panel-title {
+  margin: 0;
+  color: var(--color-slate-900);
+  font-size: 1.25rem;
+}
+
+.summary-page__panel-body {
+  margin: 0;
+  color: var(--color-slate-600);
+  line-height: 1.5;
+}
+
+.summary-page__panel-detail {
+  margin: 0;
+  color: var(--color-error);
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+
+.summary-page__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.summary-page__sections {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .summary-page__sections {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .summary-page__actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+}
+
+@media (min-width: 1280px) {
+  .summary-page__sections {
+    gap: 1.5rem;
+  }
+}

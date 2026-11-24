@@ -1,0 +1,53 @@
+<section class="payment" [attr.aria-labelledby]="planHeadingId" data-testid="payment-panel">
+  <h2 class="payment__heading" [id]="planHeadingId">{{ copy.summaryPlanHeading }}</h2>
+
+  <p class="payment__plan-name">{{ plan().name }}</p>
+  @if (plan().shortDescription) {
+    <p class="payment__plan-description">{{ plan().shortDescription }}</p>
+  }
+
+  <div class="payment__prices">
+    <p class="payment__price">{{ plan().basePriceText }}</p>
+    <p class="payment__price payment__price--final">
+      <data [attr.value]="plan().finalPrice">{{ plan().finalPriceText }}</data>
+    </p>
+    <p class="payment__adjustment">{{ plan().adjustmentText }}</p>
+    <p class="payment__footnote">{{ plan().footnote }}</p>
+  </div>
+
+  @if (paymentStatus() === 'processing') {
+    <p class="payment__processing" aria-live="polite">{{ copy.payProcessing }}</p>
+  }
+
+  @if (paymentStatus() === 'rejected') {
+    <div class="payment__rejected" role="alert" data-testid="payment-rejected">
+      <p>{{ copy.paymentRejected }}</p>
+      <button class="button button--ghost" type="button" (click)="retry.emit()">
+        {{ copy.retryPayment }}
+      </button>
+    </div>
+  }
+
+  <div class="payment__actions">
+    <button class="button button--ghost" type="button" (click)="editData.emit()">
+      {{ copy.editData }}
+    </button>
+    <button class="button button--ghost" type="button" (click)="changePlan.emit()">
+      {{ copy.changePlan }}
+    </button>
+    <button
+      class="button button--primary button--large payment__pay"
+      type="button"
+      [disabled]="!canPay()"
+      [attr.aria-disabled]="!canPay() ? 'true' : null"
+      data-testid="pay-button"
+      (click)="pay.emit()"
+    >
+      @if (paymentStatus() === 'processing') {
+        {{ copy.payProcessing }}
+      } @else {
+        {{ copy.pay }}
+      }
+    </button>
+  </div>
+</section>
